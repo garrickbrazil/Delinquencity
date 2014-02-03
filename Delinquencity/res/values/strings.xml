@@ -8,7 +8,7 @@
     <string name="game_mode_title">Mode</string>
     <string-array name="game_modes">
         <item>Robber</item>
-        <item>Police</item>
+        <item>Cop</item>
     </string-array>
     <string name="game_difficulty_title">Difficulty</string>
     <string-array name="game_difficulties">

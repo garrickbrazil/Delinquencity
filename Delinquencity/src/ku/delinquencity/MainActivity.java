@@ -27,5 +27,4 @@ public class MainActivity extends Activity {
 		Intent myIntent = new Intent(MainActivity.this, MapActivity.class);
     	MainActivity.this.startActivity(myIntent);
 	}
-
 }

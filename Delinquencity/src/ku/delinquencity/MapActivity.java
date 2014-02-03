@@ -5,7 +5,10 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import android.app.Dialog;
 import android.location.Criteria;
@@ -16,12 +19,12 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.widget.TextView;
 
+
 public class MapActivity extends FragmentActivity implements LocationListener{
 	
 	
 	private GoogleMap map;
 	private boolean firstLocationSet = false;
-	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -72,12 +75,20 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         double latitude = location.getLatitude();
         double longitude = location.getLongitude();
         LatLng latLng = new LatLng(latitude, longitude);
- 
+        
+        
         // Necessary to update camera?
         if(!firstLocationSet){
+        
         	
         	// Zoom in the Google Map
-        	map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+        	map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));		
+        	
+        	//place a marker representing the npc
+        	Marker npc1 = map.addMarker(new MarkerOptions()
+        			.position(new LatLng(latitude+.0025, longitude+.0025))
+        			.title("Test")
+        			.icon(BitmapDescriptorFactory.fromAsset("ic_launcher.png")));
         	
         	// comment to enable or disable zoom updating 
         	firstLocationSet = true;
@@ -86,7 +97,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         
         // Update text box
         locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );
- 
+        
     }
 	@Override
 	public void onProviderDisabled(String provider) {

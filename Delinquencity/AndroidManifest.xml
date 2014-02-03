@@ -43,14 +43,15 @@
             android:configChanges="orientation"/>
             
         
-    	<meta-data
-    		android:name="com.google.android.maps.v2.API_KEY"
-    		android:value="AIzaSyBkpQJ3mXBJnDTN2VWbsp0CwObTlI-XPVA"/>
+    	
         
         <meta-data
     		android:name="com.google.android.gms.version"
     		android:value="@integer/google_play_services_version" />
     	
+        <meta-data
+    		android:name="com.google.android.maps.v2.API_KEY"
+    		android:value="AIzaSyBkpQJ3mXBJnDTN2VWbsp0CwObTlI-XPVA"/>
     </application>
 
 </manifest>
