@@ -5,26 +5,29 @@ import android.app.Activity;
 import android.content.Intent;
 import android.view.Menu;
 import android.view.View;
+import java.lang.Math;
 
 public IconGenerator(){
-	public static int COP=0;
-	public static int ROBBER=1;
-	public static int COPSHIELD=2;
-	public static int GUN=3;
-	public static int CAR=4;
-	public static int PICKUP=5;
-	public static int BIKE=6;
-	public static int BEER=7;
-	public static int BREAD=8;
-	public static int COPMUTER=9;
-	public static int MOENYBAG=10;
-	public static int CASINO=11;
-	public static int BIOHAZARD=12;
-
+	public static final int COP=0;
+	public static final int COPSHIELD=1;
+	public static final int ROBBER=2;
+	public static final int GUN=3;
+	public static final int CAR=4;
+	public static final int PICKUP=5;
+	public static final int BIKE=6;
+	public static final int BEER=7;
+	public static final int BREAD=8;
+	public static final int COPMUTER=9;
+	public static final int MOENYBAG=10;
+	public static final int CASINO=11;
+	
+	private final int START = 3; //start of randomable icons
+	private final int END = 11;  //end of randomable icons
+	
 	int iconList[] = {
 		R.drawable.ic_cop,
-		R.drawable.ic_robber,
 		R.drawable.ic_copshield,
+		R.drawable.ic_robber,
 		R.drawable.ic_gun,
 		R.drawable.ic_car,
 		R.drawable.ic_pickup,
@@ -33,14 +36,25 @@ public IconGenerator(){
 		R.drawable.ic_bread,
 		R.drawable.ic_computer,
 		R.drawable.ic_moneybag,
-		R.drawable.ic_casino,
-		R.drawable.ic_biohazard
+		R.drawable.ic_casino
 		};
 	
 	int icon;
 	LatLng center();
+	
 	IconGenerator(LatLng center){
-		
+		center.this = center;
+		//will only random non cop or robber icons
+		icon = iconList[(int)(((Math.random()*((END-START)+1))+START)];
+	}
+	
+	IconGenerator(LatLng center, int icon){
+		center.this = center;
+		if (0<icon<11)//If icon is not valid use random icon 
+			//will only random non cop or robber icons
+			icon = iconList[(int)(((Math.random()*((END-START)+1))+START)];
+		else
+			icon.this = iconList[icon];
 	}
 	
 	public void setIcon(int icon){
