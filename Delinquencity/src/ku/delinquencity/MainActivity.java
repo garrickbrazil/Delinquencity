@@ -23,6 +23,7 @@ public class MainActivity extends Activity {
 	
 	public void startButton(View v){
 		
+		
 		// Load map activity
 		Intent myIntent = new Intent(MainActivity.this, MapActivity.class);
     	MainActivity.this.startActivity(myIntent);

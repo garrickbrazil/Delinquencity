@@ -1,13 +1,11 @@
 package ku.delinquencity;
 
-import android.os.Bundle;
-import android.app.Activity;
-import android.content.Intent;
-import android.view.Menu;
-import android.view.View;
 import java.lang.Math;
 
-public IconGenerator(){
+import com.google.android.gms.maps.model.LatLng;
+
+public class IconGenerator{
+
 	public static final int COP=0;
 	public static final int COPSHIELD=1;
 	public static final int ROBBER=2;
@@ -40,29 +38,45 @@ public IconGenerator(){
 		};
 	
 	int icon;
-	LatLng center();
+	LatLng center;
 	
 	IconGenerator(LatLng center){
-		center.this = center;
+		this.center = center;
 		//will only random non cop or robber icons
-		icon = iconList[(int)(((Math.random()*((END-START)+1))+START)];
+		
+		// Is this needed for the creation of the generator ?  --Garrick
+		/**********************************************************************
+		icon = iconList[(int)(((Math.random()*((END-START)+1))+START))];
+		/*********************************************************************/
 	}
 	
 	IconGenerator(LatLng center, int icon){
-		center.this = center;
-		if (0<icon<11)//If icon is not valid use random icon 
+		
+		this.center = center;
+		
+		// Is this needed for creation of the generator ?  --Garrick
+		/**********************************************************************
+		if (icon >  0 && icon < 11)//If icon is not valid use random icon 
 			//will only random non cop or robber icons
-			icon = iconList[(int)(((Math.random()*((END-START)+1))+START)];
+			icon = iconList[(int)(((Math.random()*((END-START)+1))+START))];
 		else
-			icon.this = iconList[icon];
+			this.icon = iconList[icon];
+		**********************************************************************/
 	}
 	
+	// What is this exactly?  --Garrick
 	public void setIcon(int icon){
-		icon.this = iconList[icon];
+		this.icon = iconList[icon];
 	}
 	
 	public int getIcon(){
 		return icon;
+	}
+	
+	
+	public int getRandomIcon(){
+		
+		return iconList[(int)(((Math.random()*((END-START)+1))+START))];
 	}
 	
 	public int getIcon(int icon){
