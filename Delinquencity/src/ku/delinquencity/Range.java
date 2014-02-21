@@ -11,11 +11,13 @@ public class Range {
 	public double zoomLevel;
 	public LatLngBounds boundaries;
     /*Used to calculate height and width of boundary*/
-	public void Range(double zoom, LatLngBounds bounds)
+	public Range(double zoom, LatLngBounds bounds)
 	{
 		zoomLevel = zoom;
 		LatLng northeast;
 		LatLng southwest;
+		
+		boundaries = bounds;
 		
 		northeast = bounds.northeast;
 		southwest = bounds.southwest;
@@ -31,6 +33,16 @@ public class Range {
 		contains = boundaries.contains(compareCoord);
 		return contains;
 	}
+	
+	public LatLng random(){
+		Random generator = new Random();
+		
+		double lat = boundaries.northeast.latitude - heightDegrees * .04 - (generator.nextDouble() * heightDegrees*.92);
+		double lng = boundaries.northeast.longitude - widthDegrees * .04 - (generator.nextDouble() * widthDegrees*.92);
+		
+		return new LatLng(lat, lng);
+	}
+	
 	/*A random latlng point within the bounds*/
 	public LatLng randomPoint()
 	{

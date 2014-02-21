@@ -34,11 +34,11 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	
 	// Globals
 	private GoogleMap map;
-	private LatLng player_pos;
 	private boolean setupComplete = false;
 	private boolean firstLocationSet = false;
 	private ProgressDialog load_dialog;
 	private IconGenerator iconGen;
+	private Range range;
 	
 	// Constants
 	private final boolean CONTROLS_SHOWN = false;
@@ -49,6 +49,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 	
+		
         // Setup loading dialog
         this.load_dialog = new ProgressDialog(this);
         this.load_dialog.setCanceledOnTouchOutside(false);
@@ -101,7 +102,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             TextView locText = (TextView) findViewById(R.id.locText);
             locText.setText("Waiting for location....");
             
-            player_pos = new LatLng(0,0);
+            new LatLng(0,0);
             
             
             // Begin showing loading dialog
@@ -126,11 +127,14 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         
         	iconGen = new IconGenerator(latLng);
 
+        	map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+        	range = new Range(16, map.getProjection().getVisibleRegion().latLngBounds);
         	
         	//place a marker representing the npc
         	Marker npc1 = map.addMarker(new MarkerOptions()
         			.draggable(false)
-        			.position(new LatLng(latitude+.0025, longitude+.0025))
+        			.visible(false)
+        			.position(range.random())
         			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
         					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
 
@@ -138,27 +142,31 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         	//place a marker representing the npc
         	Marker npc2 = map.addMarker(new MarkerOptions()
         			.draggable(false)
-        			.position(new LatLng(latitude-.0025, longitude+.0025))
+        			.visible(false)
+        			.position(range.random())
         			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
         					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
         	
         	//place a marker representing the npc
         	Marker npc3 = map.addMarker(new MarkerOptions()
-		        	.draggable(false)		
-		        	.position(new LatLng(latitude-.0025, longitude-.0025))
+		        	.draggable(false)
+		        	.visible(false)
+		        	.position(range.random())
         			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
         					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
 
         	//place a marker representing the npc
         	Marker npc4 = map.addMarker(new MarkerOptions()
         			.draggable(false)
-        			.position(new LatLng(latitude+.0025, longitude-.0025))
+        			.visible(false)
+        			.position(range.random())
         			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
         					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
 
         	//place a marker representing the npc
         	Marker m1 = map.addMarker(new MarkerOptions()
-        			.position(new LatLng(latitude-.003, longitude+.001))
+		        	.visible(false)
+					.position(range.random())
         			.title("Money")
         			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
         					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
@@ -166,7 +174,8 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 
         	//place a marker representing the npc
         	Marker m2 = map.addMarker(new MarkerOptions()
-        			.position(new LatLng(latitude-.0027, longitude-.0012))
+		        	.visible(false)
+					.position(range.random())
         			.title("Money")
         			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
         					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
@@ -174,7 +183,8 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 
         	//place a marker representing the npc
         	Marker m3 = map.addMarker(new MarkerOptions()
-        			.position(new LatLng(latitude+.0015, longitude+.00295))
+		        	.visible(false)
+					.position(range.random())
         			.title("Money")
         			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
         					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
@@ -182,14 +192,16 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         	
         	//place a marker representing the npc
         	Marker m4 = map.addMarker(new MarkerOptions()
-        			.position(new LatLng(latitude+.003, longitude-.0021))
+		        	.visible(false)
+					.position(range.random())
         			.title("Money")
         			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
         					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
 
         	//place a marker representing the npc
         	Marker m5 = map.addMarker(new MarkerOptions()
-        			.position(new LatLng(latitude+.002, longitude+.002))
+		        	.visible(false)
+					.position(range.random())
         			.title("Money")
         			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
         					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
@@ -209,9 +221,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         	markersToSnap[7] =new SnapParams(m4);
         	markersToSnap[8] =new SnapParams(m5);
 
-        	// Update location
-        	player_pos = latLng;
-            locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );   
+        	locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );   
         	
         	new DownloadSnapTask().execute(markersToSnap);        	
         	firstLocationSet = true;
@@ -220,9 +230,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         
         else if(setupComplete){
 
-        	player_pos = latLng;
-
-            // Update text box
+        	// Update text box
             locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );   
 
         }
@@ -323,6 +331,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         			// Only update if it was successful
         			if(r.success){
         				r.marker.setPosition(new LatLng(r.lat, r.lng));
+        				r.marker.setVisible(true);
         			}
         			
         			// Failure !
@@ -337,7 +346,6 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         		if(!setupComplete){
 
         			// Zoom in the Google Map
-        			map.animateCamera(CameraUpdateFactory.newLatLngZoom(player_pos, 15));
         			setupComplete = true;
         		}
         		

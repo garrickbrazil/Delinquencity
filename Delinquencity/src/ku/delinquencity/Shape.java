@@ -8,7 +8,7 @@ public class Shape {
 	public LatLng end;
 	public double distance;
 	/*Calculates the difference between lat and lng points in km*/
-	public void	Shape(LatLng posStart, LatLng posEnd)
+	public Shape(LatLng posStart, LatLng posEnd)
 	{
 		start = posStart;
 		end = posEnd;
@@ -26,6 +26,18 @@ public class Shape {
 	/*Recalculate the distance with a new starting point*/
 	public void updateStart(LatLng newStart)
 	{
-		Shape(newStart, end);		
+		start = newStart;
+		
+		/*Fancy mathamatical function to calculate distance of lat lng points to km*/
+		int R = 6371;
+		double dLat = Math.toRadians(end.latitude - start.latitude);
+		double dLon = Math.toRadians(end.longitude - start.longitude);
+		double startLat = Math.toRadians(start.latitude);
+		double endLat = Math.toRadians(end.latitude);
+		
+		double a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(startLat) * Math.cos(endLat);
+		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+		distance = R * c;
+		
 	}
 }
