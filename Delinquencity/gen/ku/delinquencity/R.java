@@ -223,18 +223,19 @@ containing a value of this type.
         public static final int ic_casino=0x7f02001d;
         public static final int ic_computer=0x7f02001e;
         public static final int ic_cop=0x7f02001f;
-        public static final int ic_copshield=0x7f020020;
-        public static final int ic_gun=0x7f020021;
-        public static final int ic_launcher=0x7f020022;
-        public static final int ic_moneybag=0x7f020023;
-        public static final int ic_pickup=0x7f020024;
-        public static final int ic_plusone_medium_off_client=0x7f020025;
-        public static final int ic_plusone_small_off_client=0x7f020026;
-        public static final int ic_plusone_standard_off_client=0x7f020027;
-        public static final int ic_plusone_tall_off_client=0x7f020028;
-        public static final int ic_robber=0x7f020029;
-        public static final int iconsource=0x7f02002a;
-        public static final int money=0x7f02002b;
+        public static final int ic_cop_color=0x7f020020;
+        public static final int ic_copshield=0x7f020021;
+        public static final int ic_gun=0x7f020022;
+        public static final int ic_launcher=0x7f020023;
+        public static final int ic_moneybag=0x7f020024;
+        public static final int ic_pickup=0x7f020025;
+        public static final int ic_plusone_medium_off_client=0x7f020026;
+        public static final int ic_plusone_small_off_client=0x7f020027;
+        public static final int ic_plusone_standard_off_client=0x7f020028;
+        public static final int ic_plusone_tall_off_client=0x7f020029;
+        public static final int ic_robber=0x7f02002a;
+        public static final int iconsource=0x7f02002b;
+        public static final int money=0x7f02002c;
     }
     public static final class id {
         public static final int action_settings=0x7f05000a;

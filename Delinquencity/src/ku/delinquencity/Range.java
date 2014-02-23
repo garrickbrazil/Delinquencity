@@ -35,10 +35,11 @@ public class Range {
 	}
 	
 	public LatLng random(){
+		
 		Random generator = new Random();
 		
-		double lat = boundaries.northeast.latitude - heightDegrees * .04 - (generator.nextDouble() * heightDegrees*.92);
-		double lng = boundaries.northeast.longitude - widthDegrees * .04 - (generator.nextDouble() * widthDegrees*.92);
+		double lat = boundaries.northeast.latitude - widthDegrees * .05 - (generator.nextDouble() * widthDegrees*.90);
+		double lng = boundaries.northeast.longitude - heightDegrees * .05 - (generator.nextDouble() * heightDegrees*.90);
 		
 		return new LatLng(lat, lng);
 	}

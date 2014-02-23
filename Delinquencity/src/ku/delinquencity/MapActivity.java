@@ -1,9 +1,12 @@
 package ku.delinquencity;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -39,10 +42,12 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	private ProgressDialog load_dialog;
 	private IconGenerator iconGen;
 	private Range range;
+	private long lastTime;
+	private CopClass[] cops;
 	
 	// Constants
 	private final boolean CONTROLS_SHOWN = false;
-	private final int REQUEST_FREQ = 5000;
+	private final int REQUEST_FREQ = 500;
 	private final int ITEM_SIZE = 80;
 	
 	@Override
@@ -56,6 +61,8 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         this.load_dialog.setIndeterminate(true);
         this.load_dialog.setTitle("In progress");
         this.load_dialog.setMessage("Loading...");
+        
+        this.lastTime = -1;
         
 		// Update layout
 		setContentView(R.layout.main_map);
@@ -129,40 +136,29 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 
         	map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
         	range = new Range(16, map.getProjection().getVisibleRegion().latLngBounds);
+        	int numCops = 5;
         	
-        	//place a marker representing the npc
-        	Marker npc1 = map.addMarker(new MarkerOptions()
-        			.draggable(false)
-        			.visible(false)
-        			.position(range.random())
-        			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-        					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-
-        			
-        	//place a marker representing the npc
-        	Marker npc2 = map.addMarker(new MarkerOptions()
-        			.draggable(false)
-        			.visible(false)
-        			.position(range.random())
-        			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-        					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
+        	cops = new CopClass[numCops];
         	
-        	//place a marker representing the npc
-        	Marker npc3 = map.addMarker(new MarkerOptions()
-		        	.draggable(false)
-		        	.visible(false)
-		        	.position(range.random())
-        			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-        					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-
-        	//place a marker representing the npc
-        	Marker npc4 = map.addMarker(new MarkerOptions()
-        			.draggable(false)
-        			.visible(false)
-        			.position(range.random())
-        			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-        					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-
+        	for (int i = 0; i < cops.length; i++){
+            	
+        		//place a marker representing the npc
+            	Marker npc = map.addMarker(new MarkerOptions()
+            			.draggable(false)
+            			.visible(true)
+            			.position(range.random())
+            			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
+            					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop_color).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
+            	
+            	
+            	cops[i] = new CopClass(.00017, npc, map);
+            	cops[i].setDestination(range.random());
+            	
+            	// TODO check to see if you are close to player!
+            	cops[i].movingToPlayer = false; 
+            	cops[i].waiting = true;
+        	}
+        	
         	//place a marker representing the npc
         	Marker m1 = map.addMarker(new MarkerOptions()
 		        	.visible(false)
@@ -208,22 +204,19 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 
 
         	
-        	SnapParams[] markersToSnap = new SnapParams[9];
+        	SnapParams[] markersToSnap = new SnapParams[5];
         	
         	// Create an array of markers that require snapping
-			markersToSnap[0] =new SnapParams(npc1);
-			markersToSnap[1] =new SnapParams(npc2);
-			markersToSnap[2] =new SnapParams(npc3);
-        	markersToSnap[3] =new SnapParams(npc4);
-			markersToSnap[4] =new SnapParams(m1);
-			markersToSnap[5] =new SnapParams(m2);
-			markersToSnap[6] =new SnapParams(m3);
-        	markersToSnap[7] =new SnapParams(m4);
-        	markersToSnap[8] =new SnapParams(m5);
+			markersToSnap[0] =new SnapParams(m1);
+			markersToSnap[1] =new SnapParams(m2);
+			markersToSnap[2] =new SnapParams(m3);
+        	markersToSnap[3] =new SnapParams(m4);
+        	markersToSnap[4] =new SnapParams(m5);
 
         	locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );   
         	
-        	new DownloadSnapTask().execute(markersToSnap);        	
+        	new DownloadSnapTask().execute(markersToSnap);
+        	new DownloadRouteTask().execute(cops);
         	firstLocationSet = true;
         	
         }
@@ -231,10 +224,29 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         else if(setupComplete){
 
         	// Update text box
-            locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );   
-
+            locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );
+        	long newTime = System.currentTimeMillis();
+            
+            // If there exist an older time
+            if(lastTime > 0){
+            	
+            	// Move cops !
+            	for(CopClass cop : cops){
+            		
+            		// Move cop based on time elapsed
+            		if(!cop.waiting && !cop.move(newTime - lastTime)){
+            			
+            			// TODO get that cop a new route !!
+            			cop.waiting = true;
+            			cop.updatePositionProperty();
+            			cop.setDestination(range.random());
+            			new DownloadRouteTask().execute(cop);
+            		}
+            	}	
+            }
+            
+            lastTime = System.currentTimeMillis();
         }
-        
     }
 
 	/********************************************************************
@@ -361,78 +373,94 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         protected void onProgressUpdate(Void... values) { }
     }
 	
+	
 	/********************************************************************
      * Task: DownloadRouteTask
      * Purpose: used to gather shape points for a route
     /*******************************************************************/
-/*	private class DownloadRouteTask extends AsyncTask<Cop, Void, Boolean> {
+	private class DownloadRouteTask extends AsyncTask<CopClass, Void, CopClass[]> {
     	
     	@Override
-        protected Boolean doInBackground(Cop... copToUpdate) {  
+        protected CopClass[] doInBackground(CopClass... copsToUpdate) {  
     		
-    		if (copToUpdate.length < 1) return false;
+    		if (copsToUpdate.length < 1) return copsToUpdate;
+    
+    		for (CopClass cop : copsToUpdate){
     		
-    		try {
+    			List<Shape> shapes = new ArrayList<Shape>();
+    			boolean success = true;
     			
-    			String start = copToUpdate[0].start.latitude + "," + copToUpdate[0].start.longitude;
-    			String end = copToUpdate[0].destination.latitude + "," + copToUpdate[0].destination.longitude;
-    			
-        		// Download from mapquest
-    			Document xml = Jsoup.parse(new URL("http://www.mapquestapi.com/directions/v2/route?key=Fmjtd%7Cluur21u7nl%2Crx%3Do5-90txq6&outFormat=xml&fullShape=truefrom=" + start + "&to=" + end), 10000);    			
-    		
-    			LatLng startCoord;
-    			LatLng endCoord;
-    			Double lat, lng;
-    			
-    		
-	    		if(xml.getElementsByTag("shapePoints").size() > 0 
-	                  && xml.getElementsByTag("shapePoints").get(0).getElementsByTag("latLng").size() > 0){
-	    				Element firstLatLng = xml.getElementsByTag("shapePoints").get(0).getElementsByTag("latLng").get(0);
-	    				if(firstLatLng.getElementsByTag("lat").size() > 0
-	    					&& firstLatLng.getElementsByTag("lng").size() > 0){
-	    					try{
-	    						lat = Double.parseDouble(firstLatLng.getElementsByTag("lat").text());
-	    						lng = Double.parseDouble(firstLatLng.getElementsByTag("lng").text());
-	    					}
-	    					catch(Exception e){ return false; }
-	    					
-	    					startCoord = new LatLng(lat, lng);
+	    		try {
+	    			
+	    			// Compose start and end parameters
+	    			String start = cop.getPosition().latitude + "," + cop.getPosition().longitude;
+	    			String end = cop.getDestination().latitude + "," + cop.getDestination().longitude;
+	    			
+	        		// Download from mapquest
+	    			Document xml = Jsoup.parse(new URL("http://www.mapquestapi.com/directions/v2/route?key=Fmjtd%7Cluur21u7nl%2Crx%3Do5-90txq6&outFormat=xml&fullShape=true&from=" + start + "&to=" + end), 10000);    			
+	    		
+	    			// Used parameters
+	    			LatLng startCoord;
+	    			LatLng endCoord;
+	    			Double lat, lng;
+	    		
+	    			// Check that shape point objects exist
+		    		if(xml.getElementsByTag("shapePoints").size() > 0 
+		                  && xml.getElementsByTag("shapePoints").get(0).getElementsByTag("latLng").size() > 1){
+		    			
+		    			// Get first coord
+		    			Element firstLatLng = xml.getElementsByTag("shapePoints").get(0).getElementsByTag("latLng").get(0);
+		    			
+		    			if(firstLatLng.getElementsByTag("lat").size() > 0
+		    				&& firstLatLng.getElementsByTag("lng").size() > 0){
+		    		
+							lat = Double.parseDouble(firstLatLng.getElementsByTag("lat").text());
+							lng = Double.parseDouble(firstLatLng.getElementsByTag("lng").text());
+
+							// Store first coord and remove it			
+							startCoord = new LatLng(lat, lng);
 	    					xml.getElementsByTag("shapePoints").get(0).getElementsByTag("latLng").remove(0);
-	    				}
-	    				else return false;
-	    			}
-	    			else return false;
-	    			
-	    			for (Element latlngEl : xml.getElementsByTag("shapePoints").get(0).getElementsByTag("latLng")){
-	    				
-	    				try{
-							lat = Double.parseDouble(latlngEl.getElementsByTag("lat").text());
-							lng = Double.parseDouble(latlngEl.getElementsByTag("lng").text());
-						}
-						catch(Exception e){ return false; }
-	    				
+							
+	    					// For each coordinate
+	    					for (Element latlngEl : xml.getElementsByTag("shapePoints").get(0).getElementsByTag("latLng")){
+			    				
+	    						if(latlngEl.getElementsByTag("lat").size() > 0
+	    							&& latlngEl.getElementsByTag("lng").size()> 0){
+	    						
+									lat = Double.parseDouble(latlngEl.getElementsByTag("lat").text());
+									lng = Double.parseDouble(latlngEl.getElementsByTag("lng").text());
+
+									// Make end coord and store
+				    				endCoord = new LatLng(lat, lng);
+				    				
+				    				Shape shape = new Shape(startCoord, endCoord);
+				    				shapes.add(shape);
+				    				startCoord = endCoord;
+								}
+	    						else{ success = false; break; }
+				    		}
+	    					
+	    					if(success){
+	    						cop.setRoute(shapes);
+	    					}
+		    			}
 		    		}
-	    			
-    			return true;
-			} 
-    		catch (Exception e) { e.printStackTrace(); return false; }
+	    		}
+	    		catch (Exception e) { e.printStackTrace(); return copsToUpdate; }
+    		}
+    		
+    		return copsToUpdate;
         }      
 
         @Override
-        protected void onPostExecute(Boolean result) {
+        protected void onPostExecute(CopClass[] result) {
         	
-			if(result){
-				
-				// Parse JSON
-				// Create shape points
-				
-			}
-
-			else{
-			
-				// Send blank shape list (should restart later)
-			}
-		}
+        	for(CopClass cop : result){
+        		
+        		cop.waiting = false;
+        	}
+        
+        }
         
         @Override
         protected void onPreExecute() { }
@@ -441,12 +469,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         protected void onProgressUpdate(Void... values) { }
     }
    
-	// TEMP!!!!!!
-	private class Cop{
-		public LatLng start;
-		public LatLng destination;
-	}
-	*/
+
 	
 	@Override
 	public void onProviderDisabled(String provider) { }
