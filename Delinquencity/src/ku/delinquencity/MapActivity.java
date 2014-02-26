@@ -36,7 +36,15 @@ import android.widget.TextView;
 public class MapActivity extends FragmentActivity implements LocationListener{
 	
 	// Globals
+	public final int MODE_COP = 0, MODE_ROBBER=1;
+	public final int SPEED_GRANDPA = 0, SPEED_AVERAGE = 1, SPEED_MARATHON = 2;
+	public final int AREA_TINY = 0, AREA_MEDIUM = 1, AREA_LARGE = 2, AREA_MASSIVE = 3;
 	private GoogleMap map;
+	private int mode;
+	private double speed;
+	private int area;
+	private int numCops;
+	private int numItems;
 	private boolean setupComplete = false;
 	private boolean firstLocationSet = false;
 	private ProgressDialog load_dialog;
@@ -44,16 +52,29 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	private Range range;
 	private long lastTime;
 	private CopClass[] cops;
+	private Marker[] items;
 	
 	// Constants
 	private final boolean CONTROLS_SHOWN = false;
 	private final int REQUEST_FREQ = 500;
-	private final int ITEM_SIZE = 80;
+	private final int ITEM_SIZE = 68;
+	private final int AI_SIZE = 90;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 	
+		// Grab extras
+		Bundle extras = getIntent().getExtras();
+		mode = extras.getInt("mode");
+		speed = extras.getInt("speed");
+		area = extras.getInt("area");
+		
+		speed = (speed + 1) * .00003;
+		numCops = (area + 1) * 4;
+		numItems = (int)((area + 1) * 4.5);
+		
+		area = 17 - area;
 		
         // Setup loading dialog
         this.load_dialog = new ProgressDialog(this);
@@ -134,11 +155,10 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         
         	iconGen = new IconGenerator(latLng);
 
-        	map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
-        	range = new Range(16, map.getProjection().getVisibleRegion().latLngBounds);
-        	int numCops = 5;
+        	map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, area));
+        	range = new Range(area, map.getProjection().getVisibleRegion().latLngBounds);
         	
-        	cops = new CopClass[numCops];
+        	cops = new CopClass[this.numCops];
         	
         	for (int i = 0; i < cops.length; i++){
             	
@@ -148,10 +168,9 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             			.visible(true)
             			.position(range.random())
             			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-            					((BitmapDrawable) getResources().getDrawable(R.drawable.ic_cop_color).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
+            					((BitmapDrawable) getResources().getDrawable((mode == MODE_COP)?R.drawable.ic_cop_color:R.drawable.ic_robber_color).getCurrent()).getBitmap(), AI_SIZE, AI_SIZE, false))));
             	
-            	
-            	cops[i] = new CopClass(.00017, npc, map);
+            	cops[i] = new CopClass(speed, npc, map);
             	cops[i].setDestination(range.random());
             	
             	// TODO check to see if you are close to player!
@@ -159,59 +178,24 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             	cops[i].waiting = true;
         	}
         	
-        	//place a marker representing the npc
-        	Marker m1 = map.addMarker(new MarkerOptions()
-		        	.visible(false)
-					.position(range.random())
-        			.title("Money")
-        			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-        					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-
-
-        	//place a marker representing the npc
-        	Marker m2 = map.addMarker(new MarkerOptions()
-		        	.visible(false)
-					.position(range.random())
-        			.title("Money")
-        			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-        					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-
-
-        	//place a marker representing the npc
-        	Marker m3 = map.addMarker(new MarkerOptions()
-		        	.visible(false)
-					.position(range.random())
-        			.title("Money")
-        			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-        					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-
-        	
-        	//place a marker representing the npc
-        	Marker m4 = map.addMarker(new MarkerOptions()
-		        	.visible(false)
-					.position(range.random())
-        			.title("Money")
-        			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-        					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-
-        	//place a marker representing the npc
-        	Marker m5 = map.addMarker(new MarkerOptions()
-		        	.visible(false)
-					.position(range.random())
-        			.title("Money")
-        			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-        					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-
-
-        	
-        	SnapParams[] markersToSnap = new SnapParams[5];
+        	items = new Marker[numItems];
+        	SnapParams[] markersToSnap = new SnapParams[numItems];
         	
         	// Create an array of markers that require snapping
-			markersToSnap[0] =new SnapParams(m1);
-			markersToSnap[1] =new SnapParams(m2);
-			markersToSnap[2] =new SnapParams(m3);
-        	markersToSnap[3] =new SnapParams(m4);
-        	markersToSnap[4] =new SnapParams(m5);
+        	for(int i = 0; i < items.length; i++){
+        		
+        		//place a marker representing the npc
+            	Marker m1 = map.addMarker(new MarkerOptions()
+    		        	.visible(false)
+    					.position(range.random())
+            			.title("Money")
+            			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
+            					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
+            	items[i] = m1;
+            	markersToSnap[i] = new SnapParams(m1);
+            	
+        	}
+        	
 
         	locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );   
         	

@@ -14,7 +14,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
 public class CopClass {
-	private Runnable run;
 	private Handler handler;
 	private GoogleMap map;
 	private long averageTime;

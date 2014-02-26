@@ -9,10 +9,12 @@ public class Range {
 	public double heightDegrees;
 	public double widthDegrees;
 	public double zoomLevel;
+	public Random generator;
 	public LatLngBounds boundaries;
     /*Used to calculate height and width of boundary*/
 	public Range(double zoom, LatLngBounds bounds)
 	{
+		generator = new Random();
 		zoomLevel = zoom;
 		LatLng northeast;
 		LatLng southwest;
@@ -36,10 +38,10 @@ public class Range {
 	
 	public LatLng random(){
 		
-		Random generator = new Random();
 		
-		double lat = boundaries.northeast.latitude - widthDegrees * .05 - (generator.nextDouble() * widthDegrees*.90);
-		double lng = boundaries.northeast.longitude - heightDegrees * .05 - (generator.nextDouble() * heightDegrees*.90);
+		
+		double lat = boundaries.northeast.latitude - widthDegrees * .045 - (generator.nextDouble() * widthDegrees*.91);
+		double lng = boundaries.northeast.longitude - heightDegrees * .045 - (generator.nextDouble() * heightDegrees*.91);
 		
 		return new LatLng(lat, lng);
 	}

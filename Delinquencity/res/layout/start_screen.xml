@@ -50,7 +50,7 @@
             android:text="@string/game_difficulty_title"/>
     
 		<Spinner
-	        android:id="@+id/game_difficulty"
+	        android:id="@+id/game_speed"
 	        android:textSize="13sp"
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
@@ -72,8 +72,9 @@
             android:textSize="13sp"
             android:text="@string/game_radius_title"/>
     
+			
 		<Spinner
-	        android:id="@+id/game_radius"
+	        android:id="@+id/game_area"
 	        android:textSize="13sp"
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
