@@ -13,7 +13,8 @@ import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
-public class CopClass {
+public class AI {
+	CoordCompare comp = new CoordCompare();
 	private Handler handler;
 	private GoogleMap map;
 	private long averageTime;
@@ -25,17 +26,22 @@ public class CopClass {
 	private LatLng position = null; // needed for AsyncTask (cannot access map objects)
 	private LatLng destination = null; // needed for AsyncTask (cannot access map objects)
 	private int index = 0;//used to keep track of the index in the shape point array
+	private int mode = 0;	
+	private boolean markerDead = false;
+	private List<Marker> items;
 	
-	public CopClass(double speed, Marker copMarker, GoogleMap map){
+	public AI(double speed, Marker copMarker, GoogleMap map, int mode, List<Marker> items){
+		this.items = items;
 		this.speed = speed;
 		this.copMarker = copMarker;
 		this.position = copMarker.getPosition();
 		this.map = map;
+		this.mode = mode;
 		this.averageTime = -1;
 
 	}
 	
-	public boolean move(long dxTime){
+	public boolean move(long dxTime, LatLng playerPosition){
 		
 		if(waiting) return true;	
 		
@@ -54,7 +60,6 @@ public class CopClass {
 			
 			if(distance > shapePoints.get(index).distance){
 				distance -= shapePoints.get(index).distance;
-				//copMarker.setPosition(shapePoints.get(index).end);//used so the cop doesn't jump too much
 				index++;
 			}
 			else{
@@ -77,10 +82,10 @@ public class CopClass {
 				else{
 					averageTime = (averageTime + dxTime)/2;
 				}
-				if (handler == null) handler = animateMarker(copMarker,moveTo,false, averageTime);
+				if (handler == null) handler = animateMarker(copMarker,moveTo,false, averageTime, playerPosition);
 				else {
 					handler.removeCallbacks(null);
-					handler = animateMarker(copMarker,moveTo,false, averageTime);
+					handler = animateMarker(copMarker,moveTo,false, averageTime, playerPosition);
 				}
 				
 				distance = 0;
@@ -91,7 +96,8 @@ public class CopClass {
 	}
 	
 	private Handler animateMarker(final Marker marker, final LatLng toPosition,
-            final boolean hideMarker, final long duration) {
+            final boolean hideMarker, final long duration, 
+            final LatLng playerPosition) {
         
 		final Handler handler = new Handler();
         final long start = SystemClock.uptimeMillis();
@@ -111,18 +117,34 @@ public class CopClass {
                         * startLatLng.longitude;
                 double lat = t * toPosition.latitude + (1 - t)
                         * startLatLng.latitude;
-                marker.setPosition(new LatLng(lat, lng));
+                //place player position check here
+                if(comp.isClose(new LatLng(lat, lng), playerPosition))
+                {
+                	markerDead = true;
+                	if(mode==MapActivity.MODE_ROBBER)copMarker.remove();
+                }
+                if(mode==MapActivity.MODE_ROBBER)
+	                for(int indexer = 0; indexer < items.size();){
+	                	if(comp.isClose(new LatLng(lat,lng), items.get(indexer).getPosition())){
+	                		items.get(indexer).remove(); //delete from map
+	                		items.remove(indexer); //delete from list
+	                	}else indexer++;	                	
+	                }
+                
+                if(!markerDead){
+                	marker.setPosition(new LatLng(lat, lng));
 
-                if (t < 1.0) {
-                	
-                    // Post again 16ms later.
-                    handler.postDelayed(this, 20);
-                } else {
-                    if (hideMarker) {
-                        marker.setVisible(false);
-                    } else {
-                        marker.setVisible(true);
-                    }
+	                if (t < 1.0) {
+	                	
+	                    // Post again 16ms later.
+	                    handler.postDelayed(this, 20);
+	                } else {
+	                    if (hideMarker) {
+	                        marker.setVisible(false);
+	                    } else {
+	                        marker.setVisible(true);
+	                    }
+	                }
                 }
             }
         });
@@ -146,5 +168,9 @@ public class CopClass {
 	
 	public void setDestination(LatLng destination){
 		this.destination = destination;
+	}
+	
+	public boolean wantedDeadOrAlive(){
+		return markerDead;
 	}
 }

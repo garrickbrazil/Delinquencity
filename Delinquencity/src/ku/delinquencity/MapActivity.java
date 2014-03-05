@@ -36,7 +36,7 @@ import android.widget.TextView;
 public class MapActivity extends FragmentActivity implements LocationListener{
 	
 	// Globals
-	public final int MODE_COP = 0, MODE_ROBBER=1;
+	public static final int MODE_COP = 0, MODE_ROBBER = 1;
 	public final int SPEED_GRANDPA = 0, SPEED_AVERAGE = 1, SPEED_MARATHON = 2;
 	public final int AREA_TINY = 0, AREA_MEDIUM = 1, AREA_LARGE = 2, AREA_MASSIVE = 3;
 	private GoogleMap map;
@@ -51,8 +51,8 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	private IconGenerator iconGen;
 	private Range range;
 	private long lastTime;
-	private CopClass[] cops;
-	private Marker[] items;
+	private AI[] cops;
+	private List<Marker> items;
 	private CoordCompare coordComparer = new CoordCompare();
 	
 	// Constants
@@ -88,7 +88,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         
 		// Update layout
 		setContentView(R.layout.main_map);
-		
+		items = new ArrayList<Marker>();
 		// Get services status
 		int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getBaseContext());
 		 
@@ -159,7 +159,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         	map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, area));
         	range = new Range(area, map.getProjection().getVisibleRegion().latLngBounds);
         	
-        	cops = new CopClass[this.numCops];
+        	cops = new AI[this.numCops];
         	
         	for (int i = 0; i < cops.length; i++){
             	
@@ -171,19 +171,18 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
             					((BitmapDrawable) getResources().getDrawable((mode == MODE_COP)?R.drawable.ic_cop_color:R.drawable.ic_robber_color).getCurrent()).getBitmap(), AI_SIZE, AI_SIZE, false))));
             	
-            	cops[i] = new CopClass(speed, npc, map);
+            	cops[i] = new AI(speed, npc, map,this.mode,items);
             	cops[i].setDestination(range.random());
             	
             	// TODO check to see if you are close to player!
             	cops[i].movingToPlayer = false; 
             	cops[i].waiting = true;
         	}
-        	
-        	items = new Marker[numItems];
+        	        	
         	SnapParams[] markersToSnap = new SnapParams[numItems];
         	
         	// Create an array of markers that require snapping
-        	for(int i = 0; i < items.length; i++){
+        	for(int i = 0; i < numItems; i++){
         		
         		//place a marker representing the npc
             	Marker m1 = map.addMarker(new MarkerOptions()
@@ -192,7 +191,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             			.title("Money")
             			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
             					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-            	items[i] = m1;
+            	items.add(m1);
             	markersToSnap[i] = new SnapParams(m1);
             	
         	}
@@ -216,10 +215,10 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             if(lastTime > 0){
             	
             	// Move cops !
-            	for(CopClass cop : cops){
+            	for(AI cop : cops){
             		
             		// Move cop based on time elapsed
-            		if(!cop.waiting && !cop.move(newTime - lastTime)){
+            		if(!cop.wantedDeadOrAlive() &&!cop.waiting && !cop.move(newTime - lastTime,latLng)){
             			
             			// TODO get that cop a new route !!
             			cop.waiting = true;
@@ -227,12 +226,15 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             			cop.setDestination(range.random());
             			new DownloadRouteTask().execute(cop);
             		}
+            		else if(cop.wantedDeadOrAlive() && mode== MODE_COP){
+            			locText.setText("YOU DIED!!!");
+            		}
             	}	
             }
             
             if(mode == MODE_ROBBER)
             {
-            	for(CopClass robber : cops)
+            	for(AI robber : cops)
             	{
             		if(coordComparer.isClose(robber.getPosition(),latLng))
             		{
@@ -240,7 +242,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             		}
             			
             	}
-            	for(CopClass robber : cops)
+            	for(AI robber : cops)
             	{
             		for(Marker item : items)
             		{
@@ -385,14 +387,14 @@ public class MapActivity extends FragmentActivity implements LocationListener{
      * Task: DownloadRouteTask
      * Purpose: used to gather shape points for a route
     /*******************************************************************/
-	private class DownloadRouteTask extends AsyncTask<CopClass, Void, CopClass[]> {
+	private class DownloadRouteTask extends AsyncTask<AI, Void, AI[]> {
     	
     	@Override
-        protected CopClass[] doInBackground(CopClass... copsToUpdate) {  
+        protected AI[] doInBackground(AI... copsToUpdate) {  
     		
     		if (copsToUpdate.length < 1) return copsToUpdate;
     
-    		for (CopClass cop : copsToUpdate){
+    		for (AI cop : copsToUpdate){
     		
     			List<Shape> shapes = new ArrayList<Shape>();
     			boolean success = true;
@@ -460,9 +462,9 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         }      
 
         @Override
-        protected void onPostExecute(CopClass[] result) {
+        protected void onPostExecute(AI[] result) {
         	
-        	for(CopClass cop : result){
+        	for(AI cop : result){
         		
         		cop.waiting = false;
         	}
