@@ -53,6 +53,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	private long lastTime;
 	private CopClass[] cops;
 	private Marker[] items;
+	private CoordCompare coordComparer = new CoordCompare();
 	
 	// Constants
 	private final boolean CONTROLS_SHOWN = false;
@@ -227,6 +228,28 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             			new DownloadRouteTask().execute(cop);
             		}
             	}	
+            }
+            
+            if(mode == MODE_ROBBER)
+            {
+            	for(CopClass robber : cops)
+            	{
+            		if(coordComparer.isClose(robber.getPosition(),latLng))
+            		{
+            			robber.copMarker.remove();
+            		}
+            			
+            	}
+            	for(CopClass robber : cops)
+            	{
+            		for(Marker item : items)
+            		{
+            			if(coordComparer.isClose(robber.getPosition(), item.getPosition()))
+            			{
+            				item.remove();
+            			}
+            		}
+            	}
             }
             
             lastTime = System.currentTimeMillis();
