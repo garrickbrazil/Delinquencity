@@ -71,7 +71,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 		speed = extras.getInt("speed");
 		area = extras.getInt("area");
 		
-		speed = (speed + 1) * .00003;
+		speed = (speed + 1) *.00003;
 		numCops = (area + 1) * 4;
 		numItems = (int)((area + 1) * 4.5);
 		
@@ -210,7 +210,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         	// Update text box
             locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );
         	long newTime = System.currentTimeMillis();
-            
+            boolean anyRobbersLeft=false;
             // If there exist an older time
             if(lastTime > 0){
             	
@@ -229,29 +229,27 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             		else if(cop.wantedDeadOrAlive() && mode== MODE_COP){
             			locText.setText("YOU DIED!!!");
             		}
-            	}	
+            		anyRobbersLeft = !cop.wantedDeadOrAlive() || anyRobbersLeft;
+            	}
+            	if(mode== MODE_ROBBER && !anyRobbersLeft)
+            		locText.setText("You win!!");
             }
             
-            if(mode == MODE_ROBBER)
-            {
-            	for(AI robber : cops)
-            	{
-            		if(coordComparer.isClose(robber.getPosition(),latLng))
-            		{
-            			robber.copMarker.remove();
-            		}
-            			
-            	}
-            	for(AI robber : cops)
-            	{
-            		for(Marker item : items)
-            		{
-            			if(coordComparer.isClose(robber.getPosition(), item.getPosition()))
-            			{
-            				item.remove();
-            			}
-            		}
-            	}
+            //End Conditions
+            
+            //When we are the robber, 
+            //the game ends in failure if the cop catches us(already handled)
+            //the game ends in success if we capture all items, all picked up
+            if(mode == MODE_COP){
+            	if(items.size()==0)
+            		locText.setText("YOU WIN!!!");
+            }
+            
+            //If all items are gone, you lose
+            //If all robbers are gone, you win
+            if(mode == MODE_ROBBER){
+            	if(items.size()==0)
+            		locText.setText("You lose!");            	
             }
             
             lastTime = System.currentTimeMillis();
