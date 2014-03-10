@@ -252,10 +252,10 @@ containing a value of this type.
         public static final int icons8_license=0x7f02003a;
     }
     public static final class id {
-        public static final int action_settings=0x7f05000a;
         public static final int game_area=0x7f050009;
         public static final int game_mode=0x7f050007;
         public static final int game_speed=0x7f050008;
+        public static final int help=0x7f05000a;
         public static final int hybrid=0x7f050004;
         public static final int locText=0x7f050005;
         public static final int map=0x7f050006;
@@ -275,7 +275,7 @@ containing a value of this type.
         public static final int main=0x7f0b0000;
     }
     public static final class string {
-        public static final int action_settings=0x7f06001b;
+        public static final int action_help=0x7f06001b;
         public static final int app_name=0x7f06001a;
         /**   Title for notification shown when GooglePlayServices needs to be
         enabled for a application to work. [CHAR LIMIT=70] 
