@@ -12,9 +12,11 @@ import android.widget.Spinner;
 
 public class MainActivity extends Activity {
 	//set help message TODO Write Help Message
-	String message = 
+	final String message = 
 			"Insert Help Message Here" +
 			"\nIcons by Icons8.com";
+	final String disclaimer = 
+			"Use Delinquencity with extreme caution. Do not break any laws while playing the game. Do not use this application while driving. Pay very close attention to your surroundings as to not cause harm to any others or yourself. Delinquencity is not responsible for any injuries incurred while playing Delinquencity.";
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -80,13 +82,13 @@ public class MainActivity extends Activity {
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
  
 			// set title
-		alertDialogBuilder.setTitle("Help");
+		alertDialogBuilder.setTitle("Disclaimer");
 		
 			// set dialog message
 		alertDialogBuilder
-			.setMessage(message)
+			.setMessage(disclaimer)
 			.setCancelable(false)
-			.setPositiveButton("Start",new DialogInterface.OnClickListener() {
+			.setPositiveButton("Agree",new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog,int id) {
 					// if this button is clicked, close
 					// current activity
@@ -98,7 +100,7 @@ public class MainActivity extends Activity {
 			    	MainActivity.this.startActivity(myIntent);
 				}
 			  })
-			.setNegativeButton("Cancle",new DialogInterface.OnClickListener() {
+			.setNegativeButton("Disagree",new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog,int id) {
 					// if this button is clicked, just close
 					// the dialog box and do nothing

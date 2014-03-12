@@ -19,8 +19,11 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Criteria;
@@ -53,7 +56,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	private long lastTime;
 	private AI[] cops;
 	private List<Marker> items;
-	private CoordCompare coordComparer = new CoordCompare();
+	private boolean gameOver = false; 
 	
 	// Constants
 	private final boolean CONTROLS_SHOWN = false;
@@ -64,7 +67,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-	
+		
 		// Grab extras
 		Bundle extras = getIntent().getExtras();
 		mode = extras.getInt("mode");
@@ -143,6 +146,8 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	@Override
 	public void onLocationChanged(Location location) {
  
+		if(gameOver) return;
+		
 		TextView locText = (TextView) findViewById(R.id.locText);
 		
 		// Current latitude and long
@@ -177,6 +182,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             	// TODO check to see if you are close to player!
             	cops[i].movingToPlayer = false; 
             	cops[i].waiting = true;
+            	new DownloadRouteTask().execute(cops[i]);
         	}
         	        	
         	SnapParams[] markersToSnap = new SnapParams[numItems];
@@ -200,7 +206,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         	locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );   
         	
         	new DownloadSnapTask().execute(markersToSnap);
-        	new DownloadRouteTask().execute(cops);
+        	//new DownloadRouteTask().execute(cops);
         	firstLocationSet = true;
         	
         }
@@ -227,12 +233,60 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             			new DownloadRouteTask().execute(cop);
             		}
             		else if(cop.wantedDeadOrAlive() && mode== MODE_COP){
-            			locText.setText("YOU DIED!!!");
+            			
+            			gameOver = true;
+            			
+            			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+            			 
+            			// set title
+            			alertDialogBuilder.setTitle("Game over");
+            		
+            			// set dialog message
+	            		alertDialogBuilder
+	            			.setMessage("You were caught.\nYou are in jail forever.\n\nYou lose!")
+	            			.setCancelable(false)
+	            			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
+	            				public void onClick(DialogInterface dialog,int id) {
+	            					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
+	            					MapActivity.this.startActivity(myIntent);
+	            				}
+	            			  });
+	             
+	            		// create alert dialog
+	            		AlertDialog alertDialog = alertDialogBuilder.create();
+	             
+	            		// show it
+	            		alertDialog.show();
+
             		}
             		anyRobbersLeft = !cop.wantedDeadOrAlive() || anyRobbersLeft;
             	}
-            	if(mode== MODE_ROBBER && !anyRobbersLeft)
-            		locText.setText("You win!!");
+            	if(mode== MODE_ROBBER && !anyRobbersLeft){
+        			
+            		gameOver = true;
+        			
+        			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        			 
+        			// set title
+        			alertDialogBuilder.setTitle("Game over");
+        		
+        			// set dialog message
+            		alertDialogBuilder
+            			.setMessage("You caught all the robbers! They are now in jail forever and you are awesome.\n\nYou win!")
+            			.setCancelable(false)
+            			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
+            				public void onClick(DialogInterface dialog,int id) {
+            					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
+            					MapActivity.this.startActivity(myIntent);
+            				}
+            			  });
+             
+            		// create alert dialog
+            		AlertDialog alertDialog = alertDialogBuilder.create();
+             
+            		// show it
+            		alertDialog.show();
+            	}
             }
             
             //End Conditions
@@ -241,15 +295,61 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             //the game ends in failure if the cop catches us(already handled)
             //the game ends in success if we capture all items, all picked up
             if(mode == MODE_COP){
-            	if(items.size()==0)
-            		locText.setText("YOU WIN!!!");
+            	if(items.size()==0){
+            		gameOver = true;
+    			
+	    			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+	    			 
+	    			// set title
+	    			alertDialogBuilder.setTitle("Game over");
+	    		
+	    			// set dialog message
+	        		alertDialogBuilder
+	        			.setMessage("You stole all the times! You are rich forever.\n\nYou win!")
+	        			.setCancelable(false)
+	        			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
+	        				public void onClick(DialogInterface dialog,int id) {
+	        					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
+	        					MapActivity.this.startActivity(myIntent);
+	        				}
+	        			  });
+	         
+	        		// create alert dialog
+	        		AlertDialog alertDialog = alertDialogBuilder.create();
+	         
+	        		// show it
+	        		alertDialog.show();
+            	}
             }
             
             //If all items are gone, you lose
             //If all robbers are gone, you win
             if(mode == MODE_ROBBER){
-            	if(items.size()==0)
-            		locText.setText("You lose!");            	
+            	if(items.size()==0){
+            		gameOver = true;
+    			
+	    			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+	    			 
+	    			// set title
+	    			alertDialogBuilder.setTitle("Game over");
+	    		
+	    			// set dialog message
+	        		alertDialogBuilder
+	        			.setMessage("The thiefs have finished stealing! Everything in the city is now gone.\n\nYou lose!")
+	        			.setCancelable(false)
+	        			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
+	        				public void onClick(DialogInterface dialog,int id) {
+	        					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
+	        					MapActivity.this.startActivity(myIntent);
+	        				}
+	        			  });
+	         
+	        		// create alert dialog
+	        		AlertDialog alertDialog = alertDialogBuilder.create();
+	         
+	        		// show it
+	        		alertDialog.show();
+            	}
             }
             
             lastTime = System.currentTimeMillis();

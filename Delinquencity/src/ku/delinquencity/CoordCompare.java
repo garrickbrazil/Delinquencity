@@ -3,7 +3,7 @@ import com.google.android.gms.maps.model.LatLng;
 
 public class CoordCompare
 {
-    final double THRESHOLD_DISTANCE = .012; //.0004;
+    final double THRESHOLD_DISTANCE = .015; //.012;
 	
 	public boolean isClose(LatLng coord1, LatLng coord2)
 	{
