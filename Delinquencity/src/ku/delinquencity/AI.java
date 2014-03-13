@@ -84,7 +84,7 @@ public class AI {
 				}
 				if (handler == null) handler = animateMarker(copMarker,moveTo,false, averageTime, playerPosition);
 				else {
-					handler.removeCallbacks(null);
+					handler.removeCallbacksAndMessages(null);
 					handler = animateMarker(copMarker,moveTo,false, averageTime, playerPosition);
 				}
 				
@@ -123,12 +123,12 @@ public class AI {
                 {
                 
                 	markerDead = true;
-                	if(mode==MapActivity.MODE_ROBBER){
+                	if(mode==MapActivity.MODE_COP){
                 		copMarker.remove();
                 		MapActivity.score += MapActivity.calculateScore();
                 	}
                 }
-                if(mode==MapActivity.MODE_ROBBER)
+                if(mode==MapActivity.MODE_COP)
 	                for(int indexer = 0; indexer < items.size();){
 	                	
 	                	if(!items.get(indexer).getDead() && comp.isClose(new LatLng(lat,lng), items.get(indexer).getMarker().getPosition())){

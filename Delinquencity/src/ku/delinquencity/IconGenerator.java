@@ -2,8 +2,6 @@ package ku.delinquencity;
 
 import java.lang.Math;
 
-import com.google.android.gms.maps.model.LatLng;
-
 public class IconGenerator{
 
 	public static final int COP=0;
@@ -61,17 +59,15 @@ public class IconGenerator{
 	private final int END = 22;  //end of randomable icons
 	
 	int icon;
-	LatLng center;
 	
-	public IconGenerator(LatLng center){
-		this.center = center;
-		
-		//will only random non cop or robber icons
+	
+	public IconGenerator(){
+
+		// Will only random non cop or robber icons
 		icon = getRandomIcon();
 	}
 	
-	public IconGenerator(LatLng center, int icon){
-		this.center = center;
+	public IconGenerator(int icon){
 		
 		if (icon >  0 && icon < 11)//If icon is not valid use random icon 
 			//will only random non cop or robber icons
@@ -91,8 +87,5 @@ public class IconGenerator{
 	
 	public int getIcon(int icon){
 		return iconList[icon];
-	}
-	public LatLng getLatLng(){
-		return center;
 	}
 }

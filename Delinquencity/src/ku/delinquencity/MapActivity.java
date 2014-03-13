@@ -35,52 +35,85 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.widget.TextView;
 
-
+/********************************************************************
+ * Class: MapActivity
+ * Purpose: handles location updates and the main game mechanics
+/*******************************************************************/
 public class MapActivity extends FragmentActivity implements LocationListener{
 	
-	// Globals
-	public static final int MODE_COP = 0, MODE_ROBBER = 1;
+	
+	// Settings constants
+	public static final int MODE_COP = 1, MODE_ROBBER = 0;
 	public final int SPEED_GRANDPA = 0, SPEED_AVERAGE = 1, SPEED_MARATHON = 2;
 	public final int AREA_TINY = 0, AREA_MEDIUM = 1, AREA_LARGE = 2, AREA_MASSIVE = 3;
-	private GoogleMap map;
-	private int mode;
-	private double speed;
-	private int area;
-	private int numCops;
-	private int numItems;
-	private boolean setupComplete = false;
-	private boolean firstLocationSet = false;
-	private ProgressDialog load_dialog;
-	private IconGenerator iconGen;
-	private Range range;
-	private long lastTime;
-	private static long startTime;
-	private AI[] cops;
-	private List<Item> items;
-	private boolean gameOver = false;
-	public static int score = 0;
 	
-	// Constants
-	private final boolean CONTROLS_SHOWN = false;
+	private final String ROBBER_LOSE_MESSAGE = "You were caught.\nYou are "
+			+ "in jail forever.\n\nYou lose!";
+	
+	private final String COP_WIN_MESSAGE = "You caught all the robbers! "
+			+ "They are now in jail forever and you are awesome.\n\nYou win!";
+	
+	private final String ROBBER_WIN_MESSAGE = "You stole all the times! You"
+			+ " are rich forever.\n\nYou win!";
+	
+	private final String COP_LOSE_MESSAGE = "The thieves have finished stealing!"
+			+ " Everything in the city is now gone.\n\nYou lose!";
+	
+	// Game constants
 	private final int REQUEST_FREQ = 500;
 	private final int ITEM_SIZE = 68;
 	private final int AI_SIZE = 90;
+	private final double DEFAULT_SPEED = .00003;
+	private final int DEFAULT_BOTS = 4;
+	private final double DEFAULT_ITEMS = 4.5;
+	private final int DEFAULT_ZOOM = 17;
 	
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	private GoogleMap map;				// used to store and manipulate map
+	private int mode;					// the current mode
+	private double speed;				// the current speed
+	private int area;					// current zoom setting 
+	private int numBots;				// number of bots on the map
+	private int numItems;				// number of items on the map
+	private boolean setupComplete;		// whether or not setup has completed
+	private boolean firstLocationSet;	// whether or not first location was found
+	private ProgressDialog load_dialog;	// loading dialog
+	private IconGenerator iconGen;		// generates random icons for map
+	private Range range;				// determines placement for icons and AI
+	private long lastTime;				// stores the last update time
+	private static long startTime;		// stores the time in the start of the application
+	private AI[] bots;					// stores the bots (cops or robbers depending on mode) 
+	private List<Item> items;			// contains the items put on the map
+	private boolean gameOver;			// whether or not the game has ended 
+	public static int score;			// current score of the user 
+	
+	/********************************************************************
+     * Method: onCreate
+     * Purpose: called when the activity is first created
+    /*******************************************************************/
+	@Override protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		// Grab extras
+		// Grab settings from last activity
 		Bundle extras = getIntent().getExtras();
 		mode = extras.getInt("mode");
 		speed = extras.getInt("speed");
 		area = extras.getInt("area");
 		
-		speed = (speed + 1) *.00003;
-		numCops = (area + 1) * 4;
-		numItems = (int)((area + 1) * 4.5);
+		// Calculate settings for game
+		speed = (speed + 1) * DEFAULT_SPEED;
+		numBots = (area + 1) * DEFAULT_BOTS;
+		numItems = (int)((area + 1) * DEFAULT_ITEMS);
+		area = -area + DEFAULT_ZOOM;
 		
-		area = 17 - area;
+		// Defaults
+		setupComplete = false;
+		firstLocationSet = false;
+		gameOver = false;
+		lastTime = -1;
+		startTime = System.currentTimeMillis();
+		items = new ArrayList<Item>();
+		iconGen = new IconGenerator();
+		bots = new AI[this.numBots];
 		
         // Setup loading dialog
         this.load_dialog = new ProgressDialog(this);
@@ -89,12 +122,10 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         this.load_dialog.setTitle("In progress");
         this.load_dialog.setMessage("Loading...");
         
-        this.lastTime = -1;
-        this.startTime = System.currentTimeMillis(); 
-        
-		// Update layout
+         
+		// Show main map screen
 		setContentView(R.layout.main_map);
-		items = new ArrayList<Item>();
+		
 		// Get services status
 		int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getBaseContext());
 		 
@@ -115,9 +146,9 @@ public class MapActivity extends FragmentActivity implements LocationListener{
  
             // Enabling location
             map.setMyLocationEnabled(true);
-            map.getUiSettings().setAllGesturesEnabled(CONTROLS_SHOWN);
-			map.getUiSettings().setZoomControlsEnabled(CONTROLS_SHOWN);
-			map.getUiSettings().setMyLocationButtonEnabled(CONTROLS_SHOWN);
+            map.getUiSettings().setAllGesturesEnabled(false);
+			map.getUiSettings().setZoomControlsEnabled(false);
+			map.getUiSettings().setMyLocationButtonEnabled(false);
 			
 			// Hack to make markers not clickable
         	map.setOnMarkerClickListener(new OnMarkerClickListener() {
@@ -134,11 +165,10 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             // Request updates
             locationManager.requestLocationUpdates(provider, REQUEST_FREQ, 0, this);
             
+            
+            // Show user that we are waiting for location update
             TextView locText = (TextView) findViewById(R.id.locText);
             locText.setText("Waiting for location....");
-            
-            new LatLng(0,0);
-            
             
             // Begin showing loading dialog
             load_dialog.show();
@@ -146,58 +176,77 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 		}
 	}
 	
+	/********************************************************************
+     * Method: calculateScore
+     * Purpose: calculates score based on start time and current time
+    /*******************************************************************/
 	public static long calculateScore(){
 		
+		// Calculated time elapsed
 		long dx = startTime - System.currentTimeMillis();
+		
+		// Based score
 		long score = 100;
+		
+		// Bonus points based on time elapsed 
 		long bonus = 18000/((dx/1000) + 600);
 		bonus = (bonus/5) * 5;
-		
 		
 		return score + bonus;
 	}
 	
-	@Override
-	public void onLocationChanged(Location location) {
+	/********************************************************************
+     * Method: onLocationChanged
+     * Purpose: called when a new GPS position is available
+    /*******************************************************************/
+	@Override public void onLocationChanged(Location location) {
  
+		// Game over ?
 		if(gameOver) return;
 		
-		TextView locText = (TextView) findViewById(R.id.locText);
-		
-		// Current latitude and long
-        double latitude = location.getLatitude();
-        double longitude = location.getLongitude();
-        LatLng latLng = new LatLng(latitude, longitude);
+		// New updated coordinate pair
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         
         
-        // Necessary to update camera?
+        // First location? Necessary to place items and AI
         if(!firstLocationSet){
-        
-        	iconGen = new IconGenerator(latLng);
-
+        	
+        	// Location is now set
+        	firstLocationSet = true;
+        	
+        	// Move camera to correct spot and make range object
         	map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, area));
         	range = new Range(area, map.getProjection().getVisibleRegion().latLngBounds);
         	
-        	cops = new AI[this.numCops];
         	
-        	for (int i = 0; i < cops.length; i++){
+        	// Create bots
+        	for (int i = 0; i < bots.length; i++){
             	
-        		//place a marker representing the npc
+        		// Place bot marker at random locations
             	Marker npc = map.addMarker(new MarkerOptions()
-            			.draggable(false)
-            			.visible(true)
-            			.position(range.random())
-            			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-            					((BitmapDrawable) getResources().getDrawable((mode == MODE_COP)?R.drawable.ic_cop_color:R.drawable.ic_robber_color).getCurrent()).getBitmap(), AI_SIZE, AI_SIZE, false))));
+            		.draggable(false)
+            		.visible(true)
+            		.position(range.random())
+            		.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
+        				((BitmapDrawable) getResources()
+        				.getDrawable((mode == MODE_ROBBER)?R.drawable.ic_cop_color
+        				:R.drawable.ic_robber_color).getCurrent())
+        				.getBitmap(), AI_SIZE, AI_SIZE, false))));
             	
-            	cops[i] = new AI(speed, npc, map,this.mode,items);
-            	cops[i].setDestination(range.random());
+            	// Make new AI and set give it a random destination
+            	bots[i] = new AI(speed, npc, map,this.mode,items);
+            	bots[i].setDestination(range.random());
             	
-            	cops[i].movingToPlayer = false; 
-            	cops[i].waiting = true;
-            	new DownloadRouteTask().execute(cops[i]);
+            	// Set defaults
+            	bots[i].movingToPlayer = false; 
+            	bots[i].waiting = true;
+            	
+            	// Allow AI to download its route
+            	new DownloadRouteTask().execute(bots[i]);
+            	
         	}
         	        	
+        	// Create icons to be snapped
         	SnapParams[] markersToSnap = new SnapParams[numItems];
         	
         	// Create an array of markers that require snapping
@@ -205,87 +254,106 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         		
         		//place a marker representing the npc
             	Marker m1 = map.addMarker(new MarkerOptions()
-    		        	.visible(false)
-    					.position(range.random())
-            			.title("Money")
-            			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
-            					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
+    		        .visible(false)
+    				.position(range.random())
+            		.title("Money")
+            		.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
+            			((BitmapDrawable) getResources().getDrawable(
+            			iconGen.getRandomIcon()).getCurrent()).getBitmap(),
+            			ITEM_SIZE, ITEM_SIZE, false))));
+            	
+            	// Add new item to list of items and to markersToSnap
             	items.add(new Item(m1));
             	markersToSnap[i] = new SnapParams(m1);
             	
         	}   
         	
+        	// Execute all items at the same time
         	new DownloadSnapTask().execute(markersToSnap);
-        	//new DownloadRouteTask().execute(cops);
-        	firstLocationSet = true;
-        	
         }
         
+        // Only perform any updates if all downloads have finished
         else if(setupComplete){
 
-        	// Update text box
-        	locText.setText("Score:  " + score);
+        	// Display current score
+        	TextView scoreText = (TextView) findViewById(R.id.locText);
+        	scoreText.setText("Score:  " + score);
+        	
+        	// Get new time
         	long newTime = System.currentTimeMillis();
-            boolean anyRobbersLeft=false;
-            // If there exist an older time
+            
+        	// Default logic
+        	boolean anyRobbersLeft=false;
+            
             if(lastTime > 0){
             	
-            	// Move cops !
-            	for(AI cop : cops){
+            	// Move bots
+            	for(AI bot : bots){
             		
-            		// Move cop based on time elapsed
-            		if(!cop.wantedDeadOrAlive() &&!cop.waiting && !cop.move(newTime - lastTime,latLng)){
+            		// Move bot based on time elapsed
+            		// Do not move if the bot is dead or waiting for a route
+            		if(!bot.wantedDeadOrAlive() && !bot.waiting && !bot.move(newTime - lastTime,latLng)){
             			
-            			// TODO get that cop a new route !!
-            			cop.waiting = true;
-            			cop.updatePositionProperty();
-            			cop.setDestination(range.random());
-            			new DownloadRouteTask().execute(cop);
+            			// Bot needs a new route
+            			bot.waiting = true;
+            			bot.updatePositionProperty();
+            			bot.setDestination(range.random());
+            			new DownloadRouteTask().execute(bot);
             		}
-            		else if(cop.wantedDeadOrAlive() && mode== MODE_COP){
+            		
+            		// Has this cop caught the you (the robber)?
+            		else if(bot.wantedDeadOrAlive() && mode == MODE_ROBBER){
             			
+            			// End the game
             			gameOver = true;
             			
+            			// Create a dialog builder
             			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-            			 
-            			// set title
             			alertDialogBuilder.setTitle("Game over");
             		
-            			// set dialog message
+            			
+            			// Setup for robber lose dialog
 	            		alertDialogBuilder
-	            			.setMessage("You were caught.\nYou are in jail forever.\n\nYou lose!")
+	            			.setMessage(ROBBER_LOSE_MESSAGE)
 	            			.setCancelable(false)
 	            			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	            				public void onClick(DialogInterface dialog,int id) {
+	            					
+	            					// Start a new main activity TODO instead we should just end this activity!
 	            					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
 	            					MapActivity.this.startActivity(myIntent);
 	            				}
-	            			  });
+	            			 }
+	            		);
 	             
-	            		// create alert dialog
+	            		// Create and show dialog
 	            		AlertDialog alertDialog = alertDialogBuilder.create();
-	             
-	            		// show it
 	            		alertDialog.show();
 
             		}
-            		anyRobbersLeft = !cop.wantedDeadOrAlive() || anyRobbersLeft;
+
+            		// Logic to determine win condition for cop mode 
+            		anyRobbersLeft = !bot.wantedDeadOrAlive() || anyRobbersLeft;
             	}
-            	if(mode== MODE_ROBBER && !anyRobbersLeft){
+            	
+            	// Has the player (cop) caught all the robbers? 
+            	if(mode == MODE_COP && !anyRobbersLeft){
         			
+            		// End the game
             		gameOver = true;
         			
+            		// Make new dialog for game over
         			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-        			 
-        			// set title
         			alertDialogBuilder.setTitle("Game over");
         		
-        			// set dialog message
+        			// Setup for dialog
             		alertDialogBuilder
-            			.setMessage("You caught all the robbers! They are now in jail forever and you are awesome.\n\nYou win!")
+            			.setMessage(COP_WIN_MESSAGE)
             			.setCancelable(false)
             			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
             				public void onClick(DialogInterface dialog,int id) {
+            					
+            					// Start a new main activity TODO instead we should just end this activity!
             					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
             					MapActivity.this.startActivity(myIntent);
             				}
@@ -300,84 +368,93 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             }
             
             
-            // Player picking up items
-            CoordCompare cc = new CoordCompare();
-            for(Item item : items){
-            	if(cc.isClose(latLng, item.getMarker().getPosition())){
-            		
-            		score += calculateScore();
-            		
-            		// Grabbed the item!
-            		item.getMarker().remove();
-            		item.setDead(true);
-            	}
-            }
-            
-            
-            
-            //More End Conditions
-            //When we are the robber, 
-            //the game ends in failure if the cop catches us(already handled)
-            //the game ends in success if we capture all items, all picked up
-            if(mode == MODE_COP){
+            // Robber checks
+            if(mode == MODE_ROBBER){
+            	
+            	// Used to determine if all items are taken
             	boolean itemsGone = true;
-            	for(Item i : items) itemsGone = itemsGone && i.getDead();
+                
+            	// Coordinate compare object
+	            CoordCompare cc = new CoordCompare();
+	            
+	            // Check all items
+	            for(Item item : items){
+	            	
+	            	// If they are close
+	            	if(!item.getDead() && cc.isClose(latLng, item.getMarker().getPosition())){
+	            		
+	            		// Add to users score
+	            		score += calculateScore();
+	            		
+	            		// Remove item from map and set dead
+	            		item.getMarker().remove();
+	            		item.setDead(true);
+	            	}
+	            	
+	            	itemsGone = itemsGone && item.getDead();
+	            }
+
+            	
+	            // Winning end condition
             	if(itemsGone){
+            		
+            		// End the game
             		gameOver = true;
     			
+            		// Make dialog for game over
 	    			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-	    			 
-	    			// set title
 	    			alertDialogBuilder.setTitle("Game over");
 	    		
-	    			// set dialog message
+	    			// Setup dialog
 	        		alertDialogBuilder
-	        			.setMessage("You stole all the times! You are rich forever.\n\nYou win!")
+	        			.setMessage(ROBBER_WIN_MESSAGE)
 	        			.setCancelable(false)
 	        			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	        				public void onClick(DialogInterface dialog,int id) {
+	        					
+            					// Start a new main activity TODO instead we should just end this activity!
 	        					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
 	        					MapActivity.this.startActivity(myIntent);
 	        				}
 	        			  });
 	         
-	        		// create alert dialog
+	        		// Show dialog
 	        		AlertDialog alertDialog = alertDialogBuilder.create();
-	         
-	        		// show it
 	        		alertDialog.show();
             	}
             }
             
-            //If all items are gone, you lose
-            //If all robbers are gone, you win
-            if(mode == MODE_ROBBER){
+            // Checks for cop mode
+            else if(mode == MODE_COP){
+            	
+            	// Check if any items are left
             	boolean itemsGone = true;
             	for(Item i : items) itemsGone = itemsGone && i.getDead();
             	
+            	// Cop lose condition
             	if(itemsGone){
             		gameOver = true;
     			
+            		// Create dialog builder
 	    			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-	    			 
-	    			// set title
 	    			alertDialogBuilder.setTitle("Game over");
 	    		
-	    			// set dialog message
+	    			// Setup dialog 
 	        		alertDialogBuilder
-	        			.setMessage("The thieves have finished stealing! Everything in the city is now gone.\n\nYou lose!")
+	        			.setMessage(COP_LOSE_MESSAGE)
 	        			.setCancelable(false)
 	        			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	        				public void onClick(DialogInterface dialog,int id) {
+	        					
+            					// Start a new main activity TODO instead we should just end this activity! 
 	        					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
 	        					MapActivity.this.startActivity(myIntent);
 	        				}
-	        			  });
+	        			}
+	        		);
 	         
-	        		// create alert dialog
+	        		// Show dialog
 	        		AlertDialog alertDialog = alertDialogBuilder.create();
-	         
-	        		// show it
 	        		alertDialog.show();
             	}
             }
