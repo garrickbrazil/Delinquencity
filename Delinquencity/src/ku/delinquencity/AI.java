@@ -28,9 +28,9 @@ public class AI {
 	private int index = 0;//used to keep track of the index in the shape point array
 	private int mode = 0;	
 	private boolean markerDead = false;
-	private List<Marker> items;
+	private List<Item> items;
 	
-	public AI(double speed, Marker copMarker, GoogleMap map, int mode, List<Marker> items){
+	public AI(double speed, Marker copMarker, GoogleMap map, int mode, List<Item> items){
 		this.items = items;
 		this.speed = speed;
 		this.copMarker = copMarker;
@@ -117,18 +117,25 @@ public class AI {
                         * startLatLng.longitude;
                 double lat = t * toPosition.latitude + (1 - t)
                         * startLatLng.latitude;
+                
                 //place player position check here
                 if(comp.isClose(new LatLng(lat, lng), playerPosition))
                 {
+                
                 	markerDead = true;
-                	if(mode==MapActivity.MODE_ROBBER)copMarker.remove();
+                	if(mode==MapActivity.MODE_ROBBER){
+                		copMarker.remove();
+                		MapActivity.score += MapActivity.calculateScore();
+                	}
                 }
                 if(mode==MapActivity.MODE_ROBBER)
 	                for(int indexer = 0; indexer < items.size();){
-	                	if(comp.isClose(new LatLng(lat,lng), items.get(indexer).getPosition())){
-	                		items.get(indexer).remove(); //delete from map
-	                		items.remove(indexer); //delete from list
-	                	}else indexer++;	                	
+	                	
+	                	if(!items.get(indexer).getDead() && comp.isClose(new LatLng(lat,lng), items.get(indexer).getMarker().getPosition())){
+	                		items.get(indexer).getMarker().remove(); //delete from map
+	                		items.get(indexer).setDead(true);  //delete from list
+	                		//MapActivity.score += MapActivity.calculateScore();
+	                	} else indexer++;	                	
 	                }
                 
                 if(!markerDead){

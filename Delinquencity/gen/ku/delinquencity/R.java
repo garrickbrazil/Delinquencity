@@ -281,6 +281,7 @@ containing a value of this type.
         public static final int main_map=0x7f030000;
         public static final int rounded_button=0x7f030001;
         public static final int start_screen=0x7f030002;
+        public static final int textbox=0x7f030003;
     }
     public static final class menu {
         public static final int main=0x7f0b0000;

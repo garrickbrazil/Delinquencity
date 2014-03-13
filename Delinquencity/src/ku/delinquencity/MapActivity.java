@@ -54,9 +54,11 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	private IconGenerator iconGen;
 	private Range range;
 	private long lastTime;
+	private static long startTime;
 	private AI[] cops;
-	private List<Marker> items;
-	private boolean gameOver = false; 
+	private List<Item> items;
+	private boolean gameOver = false;
+	public static int score = 0;
 	
 	// Constants
 	private final boolean CONTROLS_SHOWN = false;
@@ -88,10 +90,11 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         this.load_dialog.setMessage("Loading...");
         
         this.lastTime = -1;
+        this.startTime = System.currentTimeMillis(); 
         
 		// Update layout
 		setContentView(R.layout.main_map);
-		items = new ArrayList<Marker>();
+		items = new ArrayList<Item>();
 		// Get services status
 		int status = GooglePlayServicesUtil.isGooglePlayServicesAvailable(getBaseContext());
 		 
@@ -143,6 +146,17 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 		}
 	}
 	
+	public static long calculateScore(){
+		
+		long dx = startTime - System.currentTimeMillis();
+		long score = 100;
+		long bonus = 18000/((dx/1000) + 600);
+		bonus = (bonus/5) * 5;
+		
+		
+		return score + bonus;
+	}
+	
 	@Override
 	public void onLocationChanged(Location location) {
  
@@ -179,7 +193,6 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             	cops[i] = new AI(speed, npc, map,this.mode,items);
             	cops[i].setDestination(range.random());
             	
-            	// TODO check to see if you are close to player!
             	cops[i].movingToPlayer = false; 
             	cops[i].waiting = true;
             	new DownloadRouteTask().execute(cops[i]);
@@ -197,13 +210,10 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             			.title("Money")
             			.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
             					((BitmapDrawable) getResources().getDrawable(iconGen.getRandomIcon()).getCurrent()).getBitmap(), ITEM_SIZE, ITEM_SIZE, false))));
-            	items.add(m1);
+            	items.add(new Item(m1));
             	markersToSnap[i] = new SnapParams(m1);
             	
-        	}
-        	
-
-        	locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );   
+        	}   
         	
         	new DownloadSnapTask().execute(markersToSnap);
         	//new DownloadRouteTask().execute(cops);
@@ -214,7 +224,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         else if(setupComplete){
 
         	// Update text box
-            locText.setText("Latitude:" +  latitude  + ", Longitude:"+ longitude );
+        	locText.setText("Score:  " + score);
         	long newTime = System.currentTimeMillis();
             boolean anyRobbersLeft=false;
             // If there exist an older time
@@ -289,13 +299,30 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             	}
             }
             
-            //End Conditions
             
+            // Player picking up items
+            CoordCompare cc = new CoordCompare();
+            for(Item item : items){
+            	if(cc.isClose(latLng, item.getMarker().getPosition())){
+            		
+            		score += calculateScore();
+            		
+            		// Grabbed the item!
+            		item.getMarker().remove();
+            		item.setDead(true);
+            	}
+            }
+            
+            
+            
+            //More End Conditions
             //When we are the robber, 
             //the game ends in failure if the cop catches us(already handled)
             //the game ends in success if we capture all items, all picked up
             if(mode == MODE_COP){
-            	if(items.size()==0){
+            	boolean itemsGone = true;
+            	for(Item i : items) itemsGone = itemsGone && i.getDead();
+            	if(itemsGone){
             		gameOver = true;
     			
 	    			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
@@ -325,7 +352,10 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             //If all items are gone, you lose
             //If all robbers are gone, you win
             if(mode == MODE_ROBBER){
-            	if(items.size()==0){
+            	boolean itemsGone = true;
+            	for(Item i : items) itemsGone = itemsGone && i.getDead();
+            	
+            	if(itemsGone){
             		gameOver = true;
     			
 	    			AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
@@ -584,5 +614,6 @@ public class MapActivity extends FragmentActivity implements LocationListener{
     public void onProviderEnabled(String provider) { }
 	@Override
     public void onStatusChanged(String provider, int status, Bundle extras) { }
+	
 	
 }
