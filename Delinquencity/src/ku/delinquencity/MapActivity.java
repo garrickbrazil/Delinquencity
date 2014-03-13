@@ -335,7 +335,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	    		
 	    			// set dialog message
 	        		alertDialogBuilder
-	        			.setMessage("The thiefs have finished stealing! Everything in the city is now gone.\n\nYou lose!")
+	        			.setMessage("The thieves have finished stealing! Everything in the city is now gone.\n\nYou lose!")
 	        			.setCancelable(false)
 	        			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	        				public void onClick(DialogInterface dialog,int id) {

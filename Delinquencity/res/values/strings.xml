@@ -3,7 +3,11 @@
 	
     <string name="app_name">Delinquencity</string>
     <string name="action_help">Help</string>
-    <string name="start_button">Start!</string>
+    <string name="start_button">Play</string>
+    <string name="mode">Character</string>
+    <string name="speed">Speed</string>
+    <string name="area">Area</string>
+    <string name="howTo">How To Play</string>
     
     <string name="game_mode_title">Character</string>
     <string-array name="game_modes">
@@ -23,5 +27,7 @@
         <item>Large</item>
         <item>Massive</item>
     </string-array>
-    
+    <color name="startColor">#98bbdc</color>
+    <color name="endColor">#c2def8</color>
+    <color name="strokeColor">#000000</color>
 </resources>

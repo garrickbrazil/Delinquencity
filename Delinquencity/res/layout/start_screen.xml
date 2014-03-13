@@ -1,92 +1,103 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/city"
-    android:gravity="center_horizontal"
+    android:background="@drawable/city_new"
     android:orientation="vertical"
-    android:padding="30dp" >
+    android:padding="34dp" >
     
     <TextView
+        android:id="@+id/title"
+        android:layout_alignParentTop="true"
         android:text="@string/app_name"
         android:gravity="center"
-        android:textSize="30sp"
-        android:layout_height="wrap_content"
+        android:textSize="35sp"
+        android:layout_height="50dp"
+        android:layout_width="match_parent"/>
+    
+
+	<Spinner
+	   	android:visibility="gone"
+        android:id="@+id/game_mode"
+		android:textSize="14sp"
         android:layout_width="match_parent"
-        android:paddingBottom="30dp"/>
+        android:layout_height="50dp"
+        android:entries="@array/game_modes" />
     
-    <LinearLayout
-    	android:layout_width="match_parent"
-    	android:layout_height="wrap_content" 
-    	android:orientation="horizontal">
-        
-        <TextView 
-            android:layout_height="wrap_content"
-            android:layout_width="80dp"
-            android:textStyle="bold"
-            android:textSize="13sp"
-            android:text="@string/game_mode_title"/>
-    
-		<Spinner
-	        android:id="@+id/game_mode"
-			android:textSize="13sp"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
-	        android:entries="@array/game_modes"
-	        android:spinnerMode="dropdown" />
-	</LinearLayout>
-	
-    <LinearLayout
-    	android:paddingTop="20dp"
-    	android:layout_width="match_parent"
-    	android:layout_height="wrap_content" 
-    	android:orientation="horizontal">
-        
-        <TextView 
-            android:layout_height="wrap_content"
-            android:layout_width="80dp"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:text="@string/game_difficulty_title"/>
-    
-		<Spinner
-	        android:id="@+id/game_speed"
-	        android:textSize="13sp"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
-	        android:entries="@array/game_difficulties"
-	        android:spinnerMode="dropdown" />
-	</LinearLayout>
-	
-	<LinearLayout
-	    android:paddingTop="20dp"
-    	android:paddingBottom="20dp"
-    	android:layout_width="match_parent"
-    	android:layout_height="wrap_content" 
-    	android:orientation="horizontal">
-        
-        <TextView 
-            android:layout_height="wrap_content"
-            android:layout_width="80dp"
-			android:textStyle="bold"
-            android:textSize="13sp"
-            android:text="@string/game_radius_title"/>
-    
+	<Spinner
+	    android:visibility="gone"
+        android:id="@+id/game_speed"
+        android:textSize="14sp"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:entries="@array/game_difficulties" />
 			
-		<Spinner
-	        android:id="@+id/game_area"
-	        android:textSize="13sp"
-	        android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
-	        android:entries="@array/game_radiuses"
-	        android:spinnerMode="dropdown" />
-		
-	</LinearLayout>
-		
-    <Button 
-        android:onClick="startButton"
+	<Spinner
+	    android:visibility="gone"
+        android:id="@+id/game_area"
+        android:textSize="14sp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/start_button" />
-    
-</LinearLayout>
+        android:layout_height="50dp"
+        android:entries="@array/game_radiuses" />
+
+	<LinearLayout
+	    android:layout_marginTop="36dp"
+    	android:layout_alignParentTop="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="25dp"
+        android:layout_marginRight="25dp"
+    	android:orientation="vertical"
+    	android:gravity="center"
+    	>
+	    <Button 
+	        android:onClick="startButton"
+	        android:id="@+id/start"
+	        android:gravity="center"
+	        android:padding="10dp"
+	        android:textSize="18sp"
+	        android:background="@layout/rounded_button"
+	        android:layout_height="52dp"
+	        android:layout_width="match_parent"
+	        android:text="@string/start_button" />
+
+	    <Button
+	        android:layout_width="match_parent"
+	        android:id="@+id/mode_button"
+	        android:gravity="center"
+	        android:layout_height="52dp"
+	        android:background="@layout/rounded_button"
+	        android:onClick="openMode"
+	        android:paddingTop="10dp"
+	        android:text="@string/mode"
+	        android:textSize="18sp" />
+
+       <Button 
+	        android:onClick="openSpeed"
+	        android:id="@+id/speed_button"
+	        android:gravity="center"
+	        android:textSize="18sp"
+	        android:background="@layout/rounded_button"
+	        android:layout_height="52dp"
+	        android:layout_width="match_parent"
+	        android:text="@string/speed" />
+       <Button 
+	        android:onClick="openArea"
+	        android:id="@+id/area_button"
+	        android:gravity="center"
+	        android:textSize="18sp"
+	        android:background="@layout/rounded_button"
+	        android:layout_height="52dp"
+	        android:layout_width="match_parent"
+	        android:text="@string/area" />
+       	<Button 
+	        android:onClick="howTo"
+	        android:id="@+id/howto_button"
+	        android:gravity="center"
+	        android:textSize="18sp"
+	        android:background="@layout/rounded_button"
+	        android:layout_height="52dp"
+	        android:layout_width="match_parent"
+	        android:text="@string/howTo" />
+    </LinearLayout>
+</RelativeLayout>
