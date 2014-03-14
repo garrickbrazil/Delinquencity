@@ -169,6 +169,8 @@ public class MainActivity extends Activity {
 			.setPositiveButton("Agree",new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog,int id) {
 
+					MapActivity.score=0;
+					
 					// Start new activity
 					Intent myIntent = new Intent(MainActivity.this, MapActivity.class);
 					myIntent.putExtra("mode", mode.getSelectedItemPosition());

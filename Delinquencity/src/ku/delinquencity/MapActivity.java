@@ -23,7 +23,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Criteria;
@@ -61,7 +60,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	
 	// Game constants
 	private final int REQUEST_FREQ = 500;
-	private final int ITEM_SIZE = 68;
+	private final int ITEM_SIZE = 73;
 	private final int AI_SIZE = 90;
 	private final double DEFAULT_SPEED = .00003;
 	private final int DEFAULT_BOTS = 4;
@@ -118,6 +117,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         // Setup loading dialog
         this.load_dialog = new ProgressDialog(this);
         this.load_dialog.setCanceledOnTouchOutside(false);
+        this.load_dialog.setCancelable(true);
         this.load_dialog.setIndeterminate(true);
         this.load_dialog.setTitle("In progress");
         this.load_dialog.setMessage("Loading...");
@@ -252,15 +252,29 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         	// Create an array of markers that require snapping
         	for(int i = 0; i < numItems; i++){
         		
+        		int icon = iconGen.getRandomIcon();
+        		int width = ((BitmapDrawable) getResources().getDrawable(icon).getCurrent()).getBitmap().getWidth();
+        		int height = ((BitmapDrawable) getResources().getDrawable(icon).getCurrent()).getBitmap().getHeight();
+        		
+        		int adjustedW, adjustedH;
+        		
+        		if(width > height){
+        			adjustedW = ITEM_SIZE;
+        			adjustedH = (int)(height * ITEM_SIZE)/width;
+        		}
+        		else{
+        			adjustedH = ITEM_SIZE;
+        			adjustedW = (int)(width * ITEM_SIZE)/height;
+        		}
+        		
         		//place a marker representing the npc
             	Marker m1 = map.addMarker(new MarkerOptions()
     		        .visible(false)
     				.position(range.random())
-            		.title("Money")
             		.icon(BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(
             			((BitmapDrawable) getResources().getDrawable(
-            			iconGen.getRandomIcon()).getCurrent()).getBitmap(),
-            			ITEM_SIZE, ITEM_SIZE, false))));
+            			icon).getCurrent()).getBitmap(),
+            			adjustedW, adjustedH, false))));
             	
             	// Add new item to list of items and to markersToSnap
             	items.add(new Item(m1));
@@ -319,9 +333,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	            			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	            				public void onClick(DialogInterface dialog,int id) {
 	            					
-	            					// Start a new main activity TODO instead we should just end this activity!
-	            					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
-	            					MapActivity.this.startActivity(myIntent);
+	            					onBackPressed();
 	            				}
 	            			 }
 	            		);
@@ -353,11 +365,9 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
             				public void onClick(DialogInterface dialog,int id) {
             					
-            					// Start a new main activity TODO instead we should just end this activity!
-            					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
-            					MapActivity.this.startActivity(myIntent);
+            					onBackPressed();
             				}
-            			  });
+            		});
              
             		// create alert dialog
             		AlertDialog alertDialog = alertDialogBuilder.create();
@@ -412,11 +422,9 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	        			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	        				public void onClick(DialogInterface dialog,int id) {
 	        					
-            					// Start a new main activity TODO instead we should just end this activity!
-	        					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
-	        					MapActivity.this.startActivity(myIntent);
+	        					onBackPressed();
 	        				}
-	        			  });
+	        		});
 	         
 	        		// Show dialog
 	        		AlertDialog alertDialog = alertDialogBuilder.create();
@@ -446,12 +454,9 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	        			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	        				public void onClick(DialogInterface dialog,int id) {
 	        					
-            					// Start a new main activity TODO instead we should just end this activity! 
-	        					Intent myIntent = new Intent(MapActivity.this, MainActivity.class);
-	        					MapActivity.this.startActivity(myIntent);
-	        				}
+	        					onBackPressed();	        				
 	        			}
-	        		);
+	        		});
 	         
 	        		// Show dialog
 	        		AlertDialog alertDialog = alertDialogBuilder.create();
@@ -507,9 +512,10 @@ public class MapActivity extends FragmentActivity implements LocationListener{
     				// Convert latitude and longitude to string
 	    			String start = marker.lat + "," + marker.lng;
 	    			String end = marker.lat + "," + marker.lng;
-	    						
+	    			String extraParams = "&routeType=pedestrian"; 
+	    					
 	        		// Download from Mapquest and parse
-	    			Document xml = Jsoup.parse(new URL("http://open.mapquestapi.com/directions/v2/route?key=Fmjtd%7Cluur21u7nl%2Crx%3Do5-90txq6&outFormat=xml&fullShape=true&from=" + start + "&to=" + end), 10000);
+	    			Document xml = Jsoup.parse(new URL("http://open.mapquestapi.com/directions/v2/route?key=Fmjtd%7Cluur21u7nl%2Crx%3Do5-90txq6&outFormat=xml&fullShape=true&from=" + start + "&to=" + end + extraParams), 10000);
 	    			
 	    			// Make sure shapepoints exist
 	    			if(xml.getElementsByTag("shapePoints").size() > 0 
@@ -581,7 +587,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         	
         
         @Override
-        protected void onPreExecute() { load_dialog.show();}
+        protected void onPreExecute() {}// load_dialog.show();}
 
         @Override
         protected void onProgressUpdate(Void... values) { }
@@ -692,5 +698,10 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	@Override
     public void onStatusChanged(String provider, int status, Bundle extras) { }
 	
-	
+	@Override
+	public void onBackPressed() {
+	    load_dialog.cancel();
+	    load_dialog.dismiss();
+		finish();
+	}
 }

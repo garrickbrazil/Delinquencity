@@ -39,7 +39,6 @@ public class Range {
 	public LatLng random(){
 		
 		
-		
 		double lat = boundaries.northeast.latitude - widthDegrees * .045 - (generator.nextDouble() * widthDegrees*.91);
 		double lng = boundaries.northeast.longitude - heightDegrees * .045 - (generator.nextDouble() * heightDegrees*.91);
 		

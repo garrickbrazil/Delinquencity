@@ -17,7 +17,7 @@ public class IconGenerator{
 	public static final int CIGARETTES=10;
 	public static final int COMPUTER=11;
 	public static final int GASSTATION=12;
-	public static final int GATLINGGUN=13;
+	public static final int ICECREAM=13;
 	public static final int GUN=14;
 	public static final int MONEY=15;
 	public static final int MOENYBAG=16;
@@ -42,7 +42,7 @@ public class IconGenerator{
 		R.drawable.ic_cigarettes,
 		R.drawable.ic_computer,
 		R.drawable.ic_gasstation,
-		R.drawable.ic_gatlinggun,
+		R.drawable.ic_icecream,
 		R.drawable.ic_gun,
 		R.drawable.ic_money,
 		R.drawable.ic_moneybag,
@@ -51,7 +51,7 @@ public class IconGenerator{
 		R.drawable.ic_pizza,
 		R.drawable.ic_restaurant,
 		R.drawable.ic_rifle,
-		R.drawable.ic_testtube
+		R.drawable.ic_testtube,
 		};
 
 	
