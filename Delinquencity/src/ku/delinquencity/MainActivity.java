@@ -23,7 +23,7 @@ public class MainActivity extends Activity {
 			+ "while driving. Pay very close attention to your surroundings"
 			+ " as to not cause harm to any others or yourself. Delinquencity"
 			+ " is not responsible for any injuries incurred while playing "
-			+ "Delinquencity." + "\n\nIcons by Icons8.com";
+			+ "Delinquencity.";
 	
 	final String ROBBER_HELP = "There are many valuable items "
 			+ "throughout the city!\n\nSteal them without being caught "

@@ -46,17 +46,23 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	public final int SPEED_GRANDPA = 0, SPEED_AVERAGE = 1, SPEED_MARATHON = 2;
 	public final int AREA_TINY = 0, AREA_MEDIUM = 1, AREA_LARGE = 2, AREA_MASSIVE = 3;
 	
-	private final String ROBBER_LOSE_MESSAGE = "You were caught.\nYou are "
-			+ "in jail forever.\n\nYou lose!";
+	private final String ROBBER_LOSE_MESSAGE = "You were caught. You are "
+			+ "in jail forever. You lose!";
 	
 	private final String COP_WIN_MESSAGE = "You caught all the robbers! "
-			+ "They are now in jail forever and you are awesome.\n\nYou win!";
+			+ "They are now in jail forever and you are awesome. You win!";
 	
 	private final String ROBBER_WIN_MESSAGE = "You stole all the times! You"
-			+ " are rich forever.\n\nYou win!";
+			+ " are rich forever. You win!";
 	
 	private final String COP_LOSE_MESSAGE = "The thieves have finished stealing!"
-			+ " Everything in the city is now gone.\n\nYou lose!";
+			+ " Everything in the city is now gone. You lose!";
+	
+	private final String SETUP_ERR_MESSAGE = "Oh no!\n\nThere was an error setting"
+			+ " up from your current location. Please check your internet and "
+			+ "location settings then try again. Contact the developer if the"
+			+ " problem persists.";
+	
 	
 	// Game constants
 	private final int REQUEST_FREQ = 500;
@@ -84,6 +90,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	private List<Item> items;			// contains the items put on the map
 	private boolean gameOver;			// whether or not the game has ended 
 	public static int score;			// current score of the user 
+	public AlertDialog SetupErrDialog;	// dialog to show when a setup error occurs 
 	
 	/********************************************************************
      * Method: onCreate
@@ -98,10 +105,31 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 		speed = extras.getInt("speed");
 		area = extras.getInt("area");
 		
+		// Create a dialog builder
+		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+		alertDialogBuilder.setTitle("Setup Error");
+	
+		
+		// Setup for robber lose dialog
+		alertDialogBuilder
+			.setMessage(SETUP_ERR_MESSAGE)
+			.setCancelable(false)
+			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog,int id) {
+					
+					onBackPressed();
+				}
+			 }
+		);
+ 
+		// Create and show dialog
+		 SetupErrDialog = alertDialogBuilder.create();
+		
+		
 		// Calculate settings for game
 		speed = (speed + 1) * DEFAULT_SPEED;
-		numBots = (area + 1) * DEFAULT_BOTS;
-		numItems = (int)((area + 1) * DEFAULT_ITEMS);
+		numBots = (int) (Math.pow(2, area) * DEFAULT_BOTS);
+		numItems = (int) (Math.pow(2, area)  * DEFAULT_ITEMS);
 		area = -area + DEFAULT_ZOOM;
 		
 		// Defaults
@@ -177,19 +205,29 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	}
 	
 	/********************************************************************
+     * Method: getScoreStr
+     * Purpose: gets the score as a formated string for Dialogs
+    /*******************************************************************/
+	public static String getScoreStr(){
+		
+		return "\n\nScore:  " + score;
+	}
+	
+	
+	/********************************************************************
      * Method: calculateScore
      * Purpose: calculates score based on start time and current time
     /*******************************************************************/
 	public static long calculateScore(){
 		
 		// Calculated time elapsed
-		long dx = startTime - System.currentTimeMillis();
+		long dx = System.currentTimeMillis() - startTime;
 		
 		// Based score
 		long score = 100;
 		
 		// Bonus points based on time elapsed 
-		long bonus = 18000/((dx/1000) + 600);
+		long bonus = 13500/((dx/1000) + 400);
 		bonus = (bonus/5) * 5;
 		
 		return score + bonus;
@@ -328,7 +366,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
             			
             			// Setup for robber lose dialog
 	            		alertDialogBuilder
-	            			.setMessage(ROBBER_LOSE_MESSAGE)
+	            			.setMessage(ROBBER_LOSE_MESSAGE + getScoreStr())
 	            			.setCancelable(false)
 	            			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	            				public void onClick(DialogInterface dialog,int id) {
@@ -360,7 +398,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         		
         			// Setup for dialog
             		alertDialogBuilder
-            			.setMessage(COP_WIN_MESSAGE)
+            			.setMessage(COP_WIN_MESSAGE + getScoreStr())
             			.setCancelable(false)
             			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
             				public void onClick(DialogInterface dialog,int id) {
@@ -417,7 +455,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	    		
 	    			// Setup dialog
 	        		alertDialogBuilder
-	        			.setMessage(ROBBER_WIN_MESSAGE)
+	        			.setMessage(ROBBER_WIN_MESSAGE + getScoreStr())
 	        			.setCancelable(false)
 	        			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	        				public void onClick(DialogInterface dialog,int id) {
@@ -449,7 +487,7 @@ public class MapActivity extends FragmentActivity implements LocationListener{
 	    		
 	    			// Setup dialog 
 	        		alertDialogBuilder
-	        			.setMessage(COP_LOSE_MESSAGE)
+	        			.setMessage(COP_LOSE_MESSAGE + getScoreStr())
 	        			.setCancelable(false)
 	        			.setPositiveButton("Ok",new DialogInterface.OnClickListener() {
 	        				public void onClick(DialogInterface dialog,int id) {
@@ -509,42 +547,68 @@ public class MapActivity extends FragmentActivity implements LocationListener{
     			// For all markers
     			for(SnapParams marker : markersToUpdate){
     			
+    				int attempts = 15;
+    				boolean inRange = false;
+
     				// Convert latitude and longitude to string
 	    			String start = marker.lat + "," + marker.lng;
 	    			String end = marker.lat + "," + marker.lng;
-	    			String extraParams = "&routeType=pedestrian"; 
-	    					
-	        		// Download from Mapquest and parse
-	    			Document xml = Jsoup.parse(new URL("http://open.mapquestapi.com/directions/v2/route?key=Fmjtd%7Cluur21u7nl%2Crx%3Do5-90txq6&outFormat=xml&fullShape=true&from=" + start + "&to=" + end + extraParams), 10000);
+
+    				
+    				while (attempts > 0 && !inRange){
+    				
+    					attempts--;
+    					
+    					if(attempts == 0){
+    						marker.success = false;
+    						break;
+    					}
+    					
+    					if(attempts < 15){
+    						LatLng newPoint = range.random();
+    						
+    						start = newPoint.latitude + "," + newPoint.longitude;
+    						end = newPoint.latitude + "," + newPoint.longitude;
+    					}
+    					
+		    			String extraParams = "&routeType=pedestrian"; 
+		    					
+		        		// Download from Mapquest and parse
+		    			Document xml = Jsoup.parse(new URL("http://open.mapquestapi.com/directions/v2/route?key=Fmjtd%7Cluur21u7nl%2Crx%3Do5-90txq6&outFormat=xml&fullShape=true&from=" + start + "&to=" + end + extraParams), 10000);
+		    			
+		    			// Make sure shapepoints exist
+		    			if(xml.getElementsByTag("shapePoints").size() > 0 
+		    					&& xml.getElementsByTag("shapePoints").get(0).getElementsByTag("lat").size() > 0 
+		    					&& xml.getElementsByTag("shapePoints").get(0).getElementsByTag("lng").size() > 0){
+		    				
+		    				
+		    				try{
+		    					
+		    					// Convert ANY shape point into a double
+		    					Double lat = Double.parseDouble(xml.getElementsByTag("shapePoints").get(0).getElementsByTag("lat").get(0).text()); 
+		    					Double lng = Double.parseDouble(xml.getElementsByTag("shapePoints").get(0).getElementsByTag("lng").get(0).text());
+		    					
+		    					
+		    					// Store new position
+		    					marker.lat = lat;
+		    					marker.lng = lng;
+		    					
+		    					inRange = range.withinBounds((new LatLng(lat,lng))); 
+		    					
+		    					marker.success = inRange;
+		    				}
+		    				
+		    				// Invalid double conversion !
+		    				catch(Exception e){ markersToUpdate[0].success = false; return markersToUpdate;}	
+		    			}
 	    			
-	    			// Make sure shapepoints exist
-	    			if(xml.getElementsByTag("shapePoints").size() > 0 
-	    					&& xml.getElementsByTag("shapePoints").get(0).getElementsByTag("lat").size() > 0 
-	    					&& xml.getElementsByTag("shapePoints").get(0).getElementsByTag("lng").size() > 0){
-	    				
-	    				
-	    				try{
-	    					
-	    					// Convert ANY shape point into a double
-	    					Double lat = Double.parseDouble(xml.getElementsByTag("shapePoints").get(0).getElementsByTag("lat").get(0).text()); 
-	    					Double lng = Double.parseDouble(xml.getElementsByTag("shapePoints").get(0).getElementsByTag("lng").get(0).text());
-	    					
-	    					
-	    					// Store new position
-	    					marker.lat = lat;
-	    					marker.lng = lng;
-	    					marker.success = true;
-	    				}
-	    				
-	    				// Invalid double conversion !
-	    				catch(Exception e){ markersToUpdate[0].success = false; return markersToUpdate;}	
-	    			}
-	    			
-	    			// No shape points !
-	    			else{
-	    				markersToUpdate[0].success = false; return markersToUpdate;
-	    			}
+		    			// No shape points !
+		    			else{
+		    				markersToUpdate[0].success = false; return markersToUpdate;
+		    			}
+    				}
 				}
+    			
     			
     			// Return the markers that have been updated
     			return markersToUpdate;
@@ -568,8 +632,9 @@ public class MapActivity extends FragmentActivity implements LocationListener{
         			
         			// Failure !
         			else {
-        				// Global error
-        				// TODO
+        				gameOver=true;
+        				SetupErrDialog.show();
+        				break;
         			}
         		}
         
